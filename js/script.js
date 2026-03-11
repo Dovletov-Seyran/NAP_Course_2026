@@ -1,21 +1,19 @@
 window.onload = function () {
   let displayValue = "0";
-  let accumulator = null;
-  let pendingOp = null;
   let freshInput = true;
+  let justEvaluated = false;
   let lastOp = null;
   let lastOperand = null;
-  let justEvaluated = false;
   let expressionChain = "";
 
-  const resultEl      = document.getElementById("result");
-  const expressionEl  = document.getElementById("expression");
+  let tokens = [];
+
+  const resultEl = document.getElementById("result");
+  const expressionEl = document.getElementById("expression");
   const historyListEl = document.getElementById("history-list");
 
-  const SYM = { "+": "+", "-": "−", "x": "×", "/": "÷" };
+  const SYM = { "+": "+", "-": "−", x: "×", "/": "÷" };
 
-  // Режим: "input" — большая строка выражения, нет результата
-  //         "result" — маленькое выражение сверху, большой результат снизу
   function setMode(mode) {
     if (mode === "input") {
       expressionEl.classList.add("expression--big");
@@ -35,7 +33,10 @@ window.onload = function () {
 
   function showResult(val) {
     displayValue = String(val);
-    if (val === "Ошибка") { resultEl.textContent = "Ошибка"; return; }
+    if (val === "Ошибка") {
+      resultEl.textContent = "Ошибка";
+      return;
+    }
     let f = (+parseFloat(val).toPrecision(12)).toString();
     if (f.length > 14) f = parseFloat(val).toExponential(6);
     resultEl.textContent = f;
@@ -53,19 +54,67 @@ window.onload = function () {
       historyListEl.removeChild(historyListEl.lastChild);
   }
 
-  function applyOp(op, a, b) {
+  function priority(op) {
+    return op === "x" || op === "/" ? 2 : 1;
+  }
+
+  function evalTokens(toks) {
+    if (toks.length === 0) return "Ошибка";
+    let nums = [];
+    let ops = [];
+    for (let i = 0; i < toks.length; i++) {
+      if (toks[i].type === "num") {
+        nums.push(toks[i].val);
+      } else {
+        const op = toks[i].val;
+        while (ops.length && priority(ops[ops.length - 1]) >= priority(op)) {
+          const b = nums.pop();
+          const a = nums.pop();
+          const o = ops.pop();
+          const r = applyOne(o, a, b);
+          if (r === "Ошибка") return "Ошибка";
+          nums.push(r);
+        }
+        ops.push(op);
+      }
+    }
+    while (ops.length) {
+      const b = nums.pop();
+      const a = nums.pop();
+      const o = ops.pop();
+      const r = applyOne(o, a, b);
+      if (r === "Ошибка") return "Ошибка";
+      nums.push(r);
+    }
+    return nums[0];
+  }
+
+  function applyOne(op, a, b) {
     switch (op) {
-      case "+": return a + b;
-      case "-": return a - b;
-      case "x": return a * b;
-      case "/": return b === 0 ? "Ошибка" : a / b;
+      case "+":
+        return a + b;
+      case "-":
+        return a - b;
+      case "x":
+        return a * b;
+      case "/":
+        return b === 0 ? "Ошибка" : a / b;
     }
   }
 
+  function buildExprStr(toks, currentInput) {
+    let s = "";
+    for (const t of toks) {
+      if (t.type === "num") s += fmtNum(t.val);
+      else s += SYM[t.val];
+    }
+    if (currentInput !== undefined) s += currentInput;
+    return s || "0";
+  }
+
   function inputDigit(d) {
-    // После = начать новое выражение
-    if (justEvaluated && !pendingOp) {
-      accumulator = null;
+    if (justEvaluated && tokens.length === 0) {
+      tokens = [];
       expressionChain = "";
       justEvaluated = false;
       freshInput = true;
@@ -83,143 +132,152 @@ window.onload = function () {
       }
     }
 
-    // В режиме набора показываем выражение+текущее число большим шрифтом
-    const current = expressionChain + displayValue;
-    showExpression(current);
+    showExpression(buildExprStr(tokens, displayValue));
     setMode("input");
   }
 
   function inputOp(op) {
-    // Заменить оператор если нажали дважды подряд
-    if (freshInput && pendingOp !== null) {
-      pendingOp = op;
-      expressionChain = expressionChain.replace(/[+−×÷]\s*$/, SYM[op]);
-      showExpression(expressionChain);
+    if (
+      freshInput &&
+      tokens.length > 0 &&
+      tokens[tokens.length - 1].type === "op"
+    ) {
+      tokens[tokens.length - 1].val = op;
+      showExpression(buildExprStr(tokens));
       setMode("input");
       return;
     }
 
     const current = parseFloat(displayValue);
+    tokens.push({ type: "num", val: current });
+    tokens.push({ type: "op", val: op });
 
-    if (pendingOp !== null && !freshInput) {
-      const result = applyOp(pendingOp, accumulator, current);
-      if (result === "Ошибка") {
-        showExpression("Ошибка"); setMode("input");
-        expressionChain = ""; accumulator = null; pendingOp = null; freshInput = true;
-        return;
-      }
-      expressionChain += fmtNum(current) + SYM[op];
-      accumulator = result;
-    } else {
-      accumulator = current;
-      expressionChain = fmtNum(current) + SYM[op];
-    }
-
-    showExpression(expressionChain);
+    showExpression(buildExprStr(tokens));
     setMode("input");
-    pendingOp = op;
     freshInput = true;
     justEvaluated = false;
     lastOp = null;
   }
 
   function inputEqual() {
-    let a, b, op;
-
     if (justEvaluated) {
-      a = parseFloat(displayValue);
-      b = lastOperand;
-      op = lastOp;
-    } else {
-      if (pendingOp === null) return;
-      a = accumulator;
-      b = parseFloat(displayValue);
-      op = pendingOp;
-      lastOp = op;
-      lastOperand = b;
+      const current = parseFloat(displayValue);
+      const result = applyOne(lastOp, current, lastOperand);
+      const exprStr = fmtNum(current) + SYM[lastOp] + fmtNum(lastOperand);
+      addHistory(
+        exprStr + " = " + (result === "Ошибка" ? "Ошибка" : fmtNum(result)),
+      );
+      showExpression(exprStr);
+      setMode("result");
+      if (result === "Ошибка") {
+        showResult("Ошибка");
+        tokens = [];
+        freshInput = true;
+        justEvaluated = false;
+        return;
+      }
+      showResult(fmtNum(result));
+      tokens = [];
+      freshInput = true;
+      return;
     }
 
-    const result = applyOp(op, a, b);
-    const fullExpr = expressionChain + fmtNum(b);
-    addHistory(fullExpr + " = " + (result === "Ошибка" ? "Ошибка" : fmtNum(result)));
+    if (tokens.length === 0) return;
+    const lastTok = tokens[tokens.length - 1];
+    if (lastTok.type !== "op") return;
 
-    // После = : маленькое выражение сверху, большой результат снизу
-    showExpression(fullExpr);
+    const b = parseFloat(displayValue);
+    lastOp = lastTok.val;
+    lastOperand = b;
+
+    const allTokens = [...tokens, { type: "num", val: b }];
+    const exprStr = buildExprStr(allTokens);
+    const result = evalTokens(allTokens);
+
+    addHistory(
+      exprStr + " = " + (result === "Ошибка" ? "Ошибка" : fmtNum(result)),
+    );
+    showExpression(exprStr);
     setMode("result");
-    expressionChain = "";
+    tokens = [];
 
     if (result === "Ошибка") {
       showResult("Ошибка");
-      accumulator = null; pendingOp = null; freshInput = true; justEvaluated = false;
+      freshInput = true;
+      justEvaluated = false;
       return;
     }
 
     showResult(fmtNum(result));
-    accumulator = result;
-    pendingOp = null;
     freshInput = true;
     justEvaluated = true;
   }
 
   function inputPercent() {
     let val = parseFloat(displayValue);
-    val = (accumulator !== null && pendingOp) ? (accumulator * val) / 100 : val / 100;
+    const prevNum = tokens.length >= 2 ? tokens[tokens.length - 2].val : null;
+    val = prevNum !== null ? (prevNum * val) / 100 : val / 100;
     displayValue = fmtNum(val);
-    const current = expressionChain + displayValue;
-    showExpression(current);
+    showExpression(buildExprStr(tokens, displayValue));
     setMode("input");
     freshInput = false;
   }
 
   function inputSign() {
     if (displayValue === "0" || displayValue === "Ошибка") return;
-    displayValue = displayValue.startsWith("-") ? displayValue.slice(1) : "-" + displayValue;
-    const current = expressionChain + displayValue;
-    showExpression(current);
+    displayValue = displayValue.startsWith("-")
+      ? displayValue.slice(1)
+      : "-" + displayValue;
+    showExpression(buildExprStr(tokens, displayValue));
   }
 
   function inputClear() {
-    displayValue = "0"; accumulator = null; pendingOp = null;
-    freshInput = true; lastOp = null; lastOperand = null;
-    justEvaluated = false; expressionChain = "";
+    displayValue = "0";
+    tokens = [];
+    freshInput = true;
+    lastOp = null;
+    lastOperand = null;
+    justEvaluated = false;
+    expressionChain = "";
     showExpression("0");
     setMode("input");
     showResult("0");
   }
 
-  // Инициализация
   showExpression("0");
   setMode("input");
 
-  document.querySelectorAll('[id^="btn_digit_"]').forEach(btn => {
+  document.querySelectorAll('[id^="btn_digit_"]').forEach((btn) => {
     btn.onclick = () => inputDigit(btn.dataset.val || btn.textContent.trim());
   });
 
-  document.getElementById("btn_op_plus").onclick    = () => inputOp("+");
-  document.getElementById("btn_op_minus").onclick   = () => inputOp("-");
-  document.getElementById("btn_op_mult").onclick    = () => inputOp("x");
-  document.getElementById("btn_op_div").onclick     = () => inputOp("/");
-  document.getElementById("btn_op_equal").onclick   = () => inputEqual();
+  document.getElementById("btn_op_plus").onclick = () => inputOp("+");
+  document.getElementById("btn_op_minus").onclick = () => inputOp("-");
+  document.getElementById("btn_op_mult").onclick = () => inputOp("x");
+  document.getElementById("btn_op_div").onclick = () => inputOp("/");
+  document.getElementById("btn_op_equal").onclick = () => inputEqual();
   document.getElementById("btn_op_percent").onclick = () => inputPercent();
-  document.getElementById("btn_op_sign").onclick    = () => inputSign();
-  document.getElementById("btn_op_clear").onclick   = () => inputClear();
+  document.getElementById("btn_op_sign").onclick = () => inputSign();
+  document.getElementById("btn_op_clear").onclick = () => inputClear();
 
-  document.addEventListener("keydown", e => {
+  document.addEventListener("keydown", (e) => {
     if (e.key >= "0" && e.key <= "9") inputDigit(e.key);
-    else if (e.key === ".")           inputDigit(".");
-    else if (e.key === "+")           inputOp("+");
-    else if (e.key === "-")           inputOp("-");
-    else if (e.key === "*")           inputOp("x");
-    else if (e.key === "/")           { e.preventDefault(); inputOp("/"); }
-    else if (e.key === "Enter" || e.key === "=") inputEqual();
-    else if (e.key === "Escape")      inputClear();
+    else if (e.key === ".") inputDigit(".");
+    else if (e.key === "+") inputOp("+");
+    else if (e.key === "-") inputOp("-");
+    else if (e.key === "*") inputOp("x");
+    else if (e.key === "/") {
+      e.preventDefault();
+      inputOp("/");
+    } else if (e.key === "Enter" || e.key === "=") inputEqual();
+    else if (e.key === "Escape") inputClear();
     else if (e.key === "Backspace") {
       if (!freshInput && displayValue.length > 1) {
         displayValue = displayValue.slice(0, -1) || "0";
-        showExpression(expressionChain + displayValue);
+        showExpression(buildExprStr(tokens, displayValue));
       } else {
         displayValue = "0";
-        showExpression(expressionChain + "0");
+        showExpression(buildExprStr(tokens, "0"));
         freshInput = true;
       }
     }
