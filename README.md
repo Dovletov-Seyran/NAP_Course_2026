@@ -6,3 +6,4 @@
 |---|------|-------|
 | Лаб 1 | Верстка калькулятора (HTML/CSS) | [html-css-calculator](../../tree/html-css-calculator) |
 | Лаб 2 | Логика калькулятора (JavaScript) | [javascript-calculator](../../tree/javascript-calculator) |
+| Лаб 3 | Простое веб-приложение. Верстка | [lab3](../../tree/lab3) |
