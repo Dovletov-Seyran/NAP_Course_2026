@@ -385,12 +385,10 @@ a {
   margin: 0 auto;
 }
 
-style > .contact-section {
+.contact-section {
   background: var(--bg);
   min-height: calc(100vh - 68px);
   padding: 64px 0;
-  display: flex;
-  align-items: flex-start;
 }
 
 .contact-grid {
@@ -400,7 +398,6 @@ style > .contact-section {
   align-items: start;
 }
 
-/* Левая часть */
 .contact-info h1 {
   font-size: 40px;
   font-weight: 800;
@@ -451,6 +448,51 @@ style > .contact-section {
   font-size: 14px;
   color: var(--muted);
   line-height: 1.5;
+}
+
+/* Кнопки назад */
+.back-buttons {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.back-btn--outline {
+  background: #fff;
+  color: #374151;
+  border: 1px solid var(--line);
+}
+
+.back-btn--outline:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.back-btn--green {
+  background: var(--green);
+  color: #fff;
+}
+
+.back-btn--green:hover {
+  background: var(--green-dark);
+  color: #fff;
 }
 
 /* Форма */
@@ -566,7 +608,6 @@ style > .contact-section {
   line-height: 1.5;
 }
 
-/* Успех */
 .form-success {
   display: none;
   text-align: center;
@@ -662,4 +703,72 @@ style > .contact-section {
   color: var(--muted);
   line-height: 1.7;
   max-width: 640px;
+}
+
+.lab-section {
+  background: var(--bg);
+  padding: 64px 0;
+  min-height: 60vh;
+}
+.lab-title {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 8px;
+  letter-spacing: -0.3px;
+}
+.lab-subtitle {
+  color: var(--muted);
+  margin-bottom: 40px;
+  font-size: 16px;
+}
+.lab-card {
+  border: 1px solid var(--line) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 4px 20px rgba(17, 24, 39, 0.06) !important;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+  background: #fff;
+}
+.lab-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(17, 24, 39, 0.12) !important;
+}
+.lab-price {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--green);
+  margin-bottom: 8px;
+}
+.lab-product-card {
+  border: 1px solid var(--line) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 4px 20px rgba(17, 24, 39, 0.06) !important;
+  max-width: 640px;
+  margin: 0 auto;
+  background: #fff;
+}
+.btn-success {
+  background: var(--green) !important;
+  border-color: var(--green) !important;
+  border-radius: 999px !important;
+  font-weight: 600 !important;
+}
+.btn-success:hover {
+  background: var(--green-dark) !important;
+  border-color: var(--green-dark) !important;
+}
+.btn-outline-secondary {
+  border-radius: 999px !important;
+  font-weight: 600 !important;
+}
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+}
+.text-bg-success {
+  background: var(--green) !important;
 }

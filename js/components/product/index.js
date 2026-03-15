@@ -15,7 +15,7 @@ export class ProductComponent {
               <h4 class="card-title">${data.title}</h4>
               <p class="lab-price fs-4">${data.price}</p>
               <p class="card-text">${data.text}</p>
-              <a href="#" class="btn btn-success mt-2">Оставить заявку</a>
+              <a href="contact.html?from=${data.id}" class="btn btn-success mt-2">Оставить заявку</a>
             </div>
           </div>
         </div>

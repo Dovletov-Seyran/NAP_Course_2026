@@ -59,32 +59,33 @@ export class MainPage {
     const cardId = e.target.dataset.id;
     if (!cardId) return;
 
-    // Показываем toast
     const toastEl = document.getElementById("lab-toast");
     const toastMsg = document.getElementById("lab-toast-msg");
     const data = this.getData().find((d) => d.id == cardId);
-    if (toastMsg && data) {
+    if (toastMsg && data)
       toastMsg.textContent = `Тариф «${data.title}» — ${data.price}`;
-    }
-    if (toastEl) {
-      const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
-      toast.show();
-    }
+    if (toastEl) new bootstrap.Toast(toastEl, { delay: 3000 }).show();
 
-    // Переходим на страницу продукта
     const productPage = new ProductPage(this.parent, cardId);
     productPage.render();
   }
 
   render() {
     this.parent.innerHTML = "";
-    const html = this.getHTML();
-    this.parent.insertAdjacentHTML("beforeend", html);
+    this.parent.insertAdjacentHTML("beforeend", this.getHTML());
 
-    const data = this.getData();
-    data.forEach((item) => {
+    this.getData().forEach((item) => {
       const productCard = new ProductCardComponent(this.pageRoot);
       productCard.render(item, this.clickCard.bind(this));
     });
+
+    // Если пришли с contact.html с ?open=id — сразу открываем тариф
+    const params = new URLSearchParams(window.location.search);
+    const openId = params.get("open");
+    if (openId) {
+      history.replaceState(null, "", window.location.pathname);
+      const productPage = new ProductPage(this.parent, openId);
+      productPage.render();
+    }
   }
 }
