@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>cloud_hosting.ru — Оставить заявку</title>
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <main>
+      <div class="contact-section">
+        <div class="container">
+          <div class="back-buttons" id="back-buttons" style="display: none">
+            <button class="back-btn back-btn--outline" id="back-to-product">
+              ← К тарифу
+            </button>
+            <button class="back-btn back-btn--outline" id="back-to-all">
+              ← Все тарифы
+            </button>
+          </div>
+
+          <div class="contact-grid">
+            <div class="contact-info">
+              <h1>Оставить заявку</h1>
+              <p>
+                Заполните форму и наш менеджер свяжется с вами в течение 15
+                минут в рабочее время.
+              </p>
+              <div class="contact-features">
+                <div class="contact-feature">
+                  <div class="contact-feature__icon">⚡</div>
+                  <div>
+                    <div class="contact-feature__title">Быстрый запуск</div>
+                    <div class="contact-feature__text">
+                      Сервер будет готов через 5 минут после оплаты
+                    </div>
+                  </div>
+                </div>
+                <div class="contact-feature">
+                  <div class="contact-feature__icon">🛡</div>
+                  <div>
+                    <div class="contact-feature__title">
+                      Гарантия uptime 99.9%
+                    </div>
+                    <div class="contact-feature__text">
+                      Надёжная инфраструктура с резервированием
+                    </div>
+                  </div>
+                </div>
+                <div class="contact-feature">
+                  <div class="contact-feature__icon">💬</div>
+                  <div>
+                    <div class="contact-feature__title">Поддержка 24/7</div>
+                    <div class="contact-feature__text">
+                      Техническая помощь в любое время суток
+                    </div>
+                  </div>
+                </div>
+                <div class="contact-feature">
+                  <div class="contact-feature__icon">💳</div>
+                  <div>
+                    <div class="contact-feature__title">
+                      Без скрытых платежей
+                    </div>
+                    <div class="contact-feature__text">
+                      Платите только за то, что используете
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="contact-form-card">
+              <h2>Заполните форму</h2>
+              <div id="form-content">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Имя <span>*</span></label>
+                    <input
+                      type="text"
+                      class="form-input"
+                      id="field-name"
+                      placeholder="Иван Иванов"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Телефон <span>*</span></label>
+                    <input
+                      type="tel"
+                      class="form-input"
+                      id="field-phone"
+                      placeholder="+7 (999) 000-00-00"
+                    />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Email <span>*</span></label>
+                  <input
+                    type="email"
+                    class="form-input"
+                    id="field-email"
+                    placeholder="ivan@company.ru"
+                  />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Тариф</label>
+                  <select class="form-select" id="field-tariff">
+                    <option value="">Выберите тариф</option>
+                    <option value="1">Старт — 299 ₽/мес</option>
+                    <option value="2">Базовый — 799 ₽/мес</option>
+                    <option value="3">Бизнес — 1 999 ₽/мес</option>
+                    <option value="4">Профессионал — 3 999 ₽/мес</option>
+                    <option value="custom">Индивидуальный тариф</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Комментарий</label>
+                  <textarea
+                    class="form-textarea"
+                    id="field-comment"
+                    placeholder="Расскажите о вашем проекте..."
+                  ></textarea>
+                </div>
+                <button class="form-submit" id="form-submit-btn">
+                  Отправить заявку →
+                </button>
+                <p class="form-note">
+                  Нажимая кнопку, вы соглашаетесь с
+                  <a href="#" style="color: var(--green)"
+                    >политикой конфиденциальности</a
+                  >
+                </p>
+              </div>
+
+              <div class="form-success" id="form-success">
+                <div class="form-success__icon">✅</div>
+                <h3>Заявка отправлена!</h3>
+                <p>
+                  Спасибо! Мы получили вашу заявку и свяжемся с вами в ближайшее
+                  время.
+                </p>
+                <a href="/tariffs.html" class="form-success__back">К тарифам</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script type="module">
+      import { HeaderComponent } from "/js/components/header/index.js";
+      import { FooterComponent } from "/js/components/footer/index.js";
+      new HeaderComponent(document.body).render();
+      new FooterComponent(document.body).render();
+    </script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const params = new URLSearchParams(window.location.search);
+        const fromId = params.get("from");
+
+        if (fromId) {
+          document.getElementById("back-buttons").style.display = "flex";
+
+          const select = document.getElementById("field-tariff");
+          for (const option of select.options) {
+            if (option.value === fromId) {
+              option.selected = true;
+              break;
+            }
+          }
+
+          document.getElementById("back-to-product").addEventListener("click", () => {
+            window.location.href = "/tariffs.html?open=" + fromId;
+          });
+
+          document.getElementById("back-to-all").addEventListener("click", () => {
+            window.location.href = "/tariffs.html";
+          });
+        }
+
+        document.getElementById("form-submit-btn").addEventListener("click", async function () {
+          const name = document.getElementById("field-name").value.trim();
+          const phone = document.getElementById("field-phone").value.trim();
+          const email = document.getElementById("field-email").value.trim();
+          const tariff = document.getElementById("field-tariff").value;
+          const comment = document.getElementById("field-comment").value.trim();
+
+          if (!name || !phone || !email) {
+            alert("Пожалуйста, заполните обязательные поля: Имя, Телефон и Email");
+            return;
+          }
+
+          try {
+            const res = await fetch("/requests", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name, phone, email, tariff, comment }),
+            });
+
+            if (!res.ok) throw new Error("Ошибка отправки");
+
+            document.getElementById("form-content").style.display = "none";
+            document.getElementById("form-success").style.display = "block";
+          } catch (err) {
+            alert("Ошибка при отправке заявки. Попробуйте снова.");
+            console.error(err);
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

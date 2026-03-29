@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "name": "gg",
+    "phone": "9267772315",
+    "email": "dovletovsejran7@gmail.com",
+    "tariff": "2",
+    "comment": "fff",
+    "createdAt": "2026-03-29T14:43:36.683Z"
+  },
+  {
+    "id": 2,
+    "name": "ааа",
+    "phone": "9267772315",
+    "email": "dovletovsejran7@gmail.com",
+    "tariff": "1",
+    "comment": "rfr",
+    "createdAt": "2026-03-29T14:45:12.490Z"
+  }
+]

@@ -1,0 +1,55 @@
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const fromId = params.get("from");
+
+  if (fromId) {
+    document.getElementById("back-buttons").style.display = "flex";
+
+    const select = document.getElementById("field-tariff");
+    for (const option of select.options) {
+      if (option.value === fromId) {
+        option.selected = true;
+        break;
+      }
+    }
+
+    document.getElementById("back-to-product").addEventListener("click", () => {
+      window.location.href = "tariffs.html?open=" + fromId;
+    });
+
+    document.getElementById("back-to-all").addEventListener("click", () => {
+      window.location.href = "tariffs.html";
+    });
+  }
+
+  document
+    .getElementById("form-submit-btn")
+    .addEventListener("click", async function () {
+      const name = document.getElementById("field-name").value.trim();
+      const phone = document.getElementById("field-phone").value.trim();
+      const email = document.getElementById("field-email").value.trim();
+      const tariff = document.getElementById("field-tariff").value;
+      const comment = document.getElementById("field-comment").value.trim();
+
+      if (!name || !phone || !email) {
+        alert("Пожалуйста, заполните обязательные поля: Имя, Телефон и Email");
+        return;
+      }
+
+      try {
+        const res = await fetch("/requests", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, phone, email, tariff, comment }),
+        });
+
+        if (!res.ok) throw new Error("Ошибка отправки");
+
+        document.getElementById("form-content").style.display = "none";
+        document.getElementById("form-success").style.display = "block";
+      } catch (err) {
+        alert("Ошибка при отправке заявки. Попробуйте снова.");
+        console.error(err);
+      }
+    });
+</script>

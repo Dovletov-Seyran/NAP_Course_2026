@@ -1,43 +1,75 @@
 ---
 
-# Лабораторная работа №5 — AJAX запросы через XMLHttpRequest
+# Лабораторная работа №6 — Fetch API, Promise, Vite сборка
 
 ## Цель
 
-Взаимодействие с API через XMLHttpRequest, организация слоя работы с сетью.
-
-## Вариант 3
-
-Обновление карточки тарифа через PATCH-запрос.
+Замена XMLHttpRequest на современный fetch API с async/await, сборка фронтенда через Vite и раздача статики с бэкенда.
 
 ## Что реализовано
 
-- Слой `modules/` для работы с API
-- Класс `Ajax` с методами get / post / patch / delete через XHR
-- Класс `TariffUrls` — все эндпоинты в одном месте
-- Главная страница: загрузка тарифов через XHR + фильтрация по названию
-- Страница тарифа: загрузка по ID через XHR + форма редактирования с PATCH-запросом
-- Карточка обновляется без перезагрузки страницы после сохранения
+### Часть 1 — Fetch API
+
+- Класс `Ajax` переписан с XHR на fetch + async/await
+- Все методы (get, post, patch, delete) возвращают Promise
+- Обработка ошибок через try/catch вместо коллбеков
+- Страница тарифов: загрузка через fetch + фильтрация по названию
+- Страница тарифа: загрузка по ID + редактирование через PATCH
+
+### Часть 2 — Vite сборка + статика
+
+- Фронтенд собирается через Vite в папку `frontend/public`
+- Бэкенд раздаёт собранный фронтенд как статику
+- Фронт и бэк на одном домене `http://localhost:3000` — CORS не нужен
+
+### Дополнительно — Форма заявок
+
+- Новый эндпоинт `POST /requests` на бэкенде
+- Заявки сохраняются в `backend/src/data/requests.json`
+- Форма `contact.html` отправляет данные через fetch
+
+## Новые эндпоинты API
+
+| Метод | URL       | Описание            |
+| ----- | --------- | ------------------- |
+| POST  | /requests | Создать заявку      |
+| GET   | /requests | Получить все заявки |
 
 ## Структура новых файлов
 
 ```
-frontend/js/
-├── modules/
-│   ├── ajax.js          — XHR класс (get, post, patch, delete)
-│   └── tariffUrls.js    — URL эндпоинтов API
+backend/src/
+├── controllers/
+│   └── requestsController.js
+├── services/
+│   └── requestsService.js
+├── routes/
+│   └── requests.js
+└── data/
+    └── requests.json
+
+frontend/
+├── vite.config.js
+└── public/             ← результат сборки
 ```
 
 ## Технологии
 
-- XMLHttpRequest (XHR)
-- REST API (Express.js, из ЛР №4)
+- Fetch API
+- Promise / async await
+- Vite 5
 
 ## Запуск
 
 ```bash
-cd backend
+# Сборка фронтенда
+cd frontend
+npm run build
+cp -r public ../backend/public
+
+# Запуск сервера
+cd ../backend
 npm run dev
 ```
 
-Затем открыть `frontend/pages/tariffs.html` через Live Server.
+Открыть `http://localhost:3000`
