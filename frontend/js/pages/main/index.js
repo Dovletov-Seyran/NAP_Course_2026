@@ -1,17 +1,30 @@
 import { ProductCardComponent } from "../../components/product-card/index.js";
 import { ProductPage } from "../product/index.js";
-
-const API_URL = "http://localhost:3000/tariffs";
+import { ajax } from "../../modules/ajax.js";
+import { tariffUrls } from "../../modules/tariffUrls.js";
 
 export class MainPage {
   constructor(parent) {
     this.parent = parent;
   }
 
-  async getData() {
-    const res = await fetch(API_URL);
-    if (!res.ok) throw new Error("Ошибка загрузки тарифов");
-    return await res.json();
+  getData(title = "") {
+    ajax.get(tariffUrls.getTariffs(title), (data, status) => {
+      if (status === 200 && data) {
+        this.renderData(data);
+      } else {
+        this.pageRoot.innerHTML = `<p style="color:red">Ошибка загрузки тарифов (${status})</p>`;
+      }
+    });
+  }
+
+  renderData(items) {
+    // Очищаем список перед отрисовкой (нужно для фильтрации)
+    this.pageRoot.innerHTML = "";
+    items.forEach((item) => {
+      const productCard = new ProductCardComponent(this.pageRoot);
+      productCard.render(item, this.clickCard.bind(this));
+    });
   }
 
   get pageRoot() {
@@ -24,6 +37,17 @@ export class MainPage {
         <div class="container">
           <h2 class="lab-title">Тарифы VPS/VDS</h2>
           <p class="lab-subtitle">Выберите подходящий тариф — нажмите на карточку, чтобы узнать подробнее</p>
+
+          <div class="filter-row">
+            <input
+              type="text"
+              id="filter-input"
+              class="form-input"
+              placeholder="Поиск по названию тарифа..."
+              style="max-width: 360px; margin-bottom: 28px;"
+            />
+          </div>
+
           <div id="main-page" class="d-flex flex-wrap gap-3 justify-content-center"></div>
         </div>
       </div>
@@ -43,28 +67,25 @@ export class MainPage {
     productPage.render();
   }
 
-  async render() {
+  render() {
     this.parent.innerHTML = "";
     this.parent.insertAdjacentHTML("beforeend", this.getHTML());
 
-    try {
-      const data = await this.getData();
+    // Загружаем все тарифы
+    this.getData();
 
-      data.forEach((item) => {
-        const productCard = new ProductCardComponent(this.pageRoot);
-        productCard.render(item, this.clickCard.bind(this));
-      });
+    // Фильтрация при вводе текста
+    document.getElementById("filter-input").addEventListener("input", (e) => {
+      this.getData(e.target.value);
+    });
 
-      const params = new URLSearchParams(window.location.search);
-      const openId = params.get("open");
-      if (openId) {
-        history.replaceState(null, "", window.location.pathname);
-        const productPage = new ProductPage(this.parent, openId);
-        productPage.render();
-      }
-    } catch (err) {
-      this.pageRoot.innerHTML = `<p style="color:red">Ошибка загрузки тарифов. Убедитесь что бэкенд запущен на порту 3000.</p>`;
-      console.error(err);
+    // Обработка ?open=id из URL (возврат с contact.html)
+    const params = new URLSearchParams(window.location.search);
+    const openId = params.get("open");
+    if (openId) {
+      history.replaceState(null, "", window.location.pathname);
+      const productPage = new ProductPage(this.parent, openId);
+      productPage.render();
     }
   }
 }

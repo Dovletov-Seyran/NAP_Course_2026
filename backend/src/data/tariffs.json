@@ -3,7 +3,7 @@
     "id": 1,
     "src": "https://img.icons8.com/fluency/96/server.png",
     "title": "Старт",
-    "price": "299 ₽/мес",
+    "price": "350 ₽/мес",
     "text": "1 vCPU · 1 ГБ RAM · 20 ГБ SSD · 100 Мбит/с",
     "fullText": "Идеально для старта небольшого проекта или тестовой среды. Включает 1 vCPU, 1 ГБ RAM, 20 ГБ SSD и канал 100 Мбит/с."
   },
@@ -11,7 +11,7 @@
     "id": 2,
     "src": "https://img.icons8.com/fluency/96/cloud.png",
     "title": "Базовый",
-    "price": "799 ₽/мес",
+    "price": "850 ₽/мес",
     "text": "2 vCPU · 4 ГБ RAM · 60 ГБ SSD · 200 Мбит/с",
     "fullText": "Отличный выбор для веб-сайтов и небольших backend-сервисов. 2 vCPU, 4 ГБ RAM, 60 ГБ SSD, 200 Мбит/с."
   },

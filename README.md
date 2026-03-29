@@ -1,62 +1,43 @@
 ---
 
-# Лабораторная работа №4 — Бэкенд на Express.js
+# Лабораторная работа №5 — AJAX запросы через XMLHttpRequest
 
 ## Цель
 
-Знакомство с Express.js, архитектурой REST API, разделением на слои (Router → Controller → Service).
+Взаимодействие с API через XMLHttpRequest, организация слоя работы с сетью.
+
+## Вариант 3
+
+Обновление карточки тарифа через PATCH-запрос.
 
 ## Что реализовано
 
-- REST API для управления тарифами VPS/VDS
-- Слоистая архитектура: routes / controllers / services
-- Хранение данных в JSON-файле через fileService
-- CORS для взаимодействия фронтенда с бэкендом
-- Логирующий middleware
-- Фронтенд переведён с хардкода на fetch-запросы к API
+- Слой `modules/` для работы с API
+- Класс `Ajax` с методами get / post / patch / delete через XHR
+- Класс `TariffUrls` — все эндпоинты в одном месте
+- Главная страница: загрузка тарифов через XHR + фильтрация по названию
+- Страница тарифа: загрузка по ID через XHR + форма редактирования с PATCH-запросом
+- Карточка обновляется без перезагрузки страницы после сохранения
 
-## Структура бэкенда
+## Структура новых файлов
 
 ```
-backend/
-├── src/
-│   ├── index.js              — точка входа, настройка сервера
-│   ├── routes/
-│   │   └── tariffs.js        — маршруты
-│   ├── controllers/
-│   │   └── tariffsController.js — обработка запросов
-│   ├── services/
-│   │   ├── tariffsService.js — бизнес-логика
-│   │   └── fileService.js    — чтение/запись JSON
-│   └── data/
-│       └── tariffs.json      — хранилище данных
-├── package.json
-└── package-lock.json
+frontend/js/
+├── modules/
+│   ├── ajax.js          — XHR класс (get, post, patch, delete)
+│   └── tariffUrls.js    — URL эндпоинтов API
 ```
-
-## API endpoints
-
-| Метод  | URL          | Описание             |
-| ------ | ------------ | -------------------- |
-| GET    | /tariffs     | Получить все тарифы  |
-| GET    | /tariffs/:id | Получить тариф по ID |
-| POST   | /tariffs     | Создать тариф        |
-| PATCH  | /tariffs/:id | Обновить тариф       |
-| DELETE | /tariffs/:id | Удалить тариф        |
 
 ## Технологии
 
-- Node.js
-- Express.js
-- cors
-- nodemon (dev)
+- XMLHttpRequest (XHR)
+- REST API (Express.js, из ЛР №4)
 
 ## Запуск
 
 ```bash
 cd backend
-npm install
 npm run dev
 ```
 
-Сервер запускается на `http://localhost:3000`
+Затем открыть `frontend/pages/tariffs.html` через Live Server.
