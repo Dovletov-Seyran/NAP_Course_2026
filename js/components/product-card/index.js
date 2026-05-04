@@ -15,7 +15,7 @@ export class ProductCardComponent {
             class="btn btn-success w-100"
             id="click-card-${data.id}"
             data-id="${data.id}"
-          >Подробнее</button>
+          >Смотреть в 3D</button>
         </div>
       </div>
     `;

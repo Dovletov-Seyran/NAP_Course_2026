@@ -7,7 +7,7 @@ export class HeaderComponent {
     const currentPage = window.location.pathname.split("/").pop();
     const navItems = [
       { label: "Главная", href: "index.html" },
-      { label: "Продукты", href: "tariffs.html" },
+      { label: "Каталог", href: "tariffs.html" },
       { label: "Калькулятор", href: "calculator.html" },
       { label: "О компании", href: "about.html" },
     ];

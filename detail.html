@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cloud_hosting.ru — Просмотр модели</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/examples/jsm/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a href="pages/index.html" class="site-logo">
+        <span class="site-logo__icon">&#9729;</span>
+        cloud_hosting.ru
+      </a>
+      <nav class="site-nav">
+        <a href="index.html" class="nav__link">&larr; Назад в галерею</a>
+      </nav>
+      <span class="detail-model-name" id="modelTitle">Модель</span>
+    </div>
+  </header>
+
+  <main class="detail-page">
+    <div class="container">
+      <div class="detail__viewer" id="viewer"></div>
+      <div class="detail__controls">
+        <div class="detail__zoom">
+          <button class="detail__btn" id="zoomIn">+</button>
+          <button class="detail__btn" id="zoomOut">&minus;</button>
+        </div>
+        <div class="detail__views">
+          <button class="detail__btn" data-view="front">Спереди</button>
+          <button class="detail__btn" data-view="back">Сзади</button>
+          <button class="detail__btn" data-view="left">Слева</button>
+          <button class="detail__btn" data-view="right">Справа</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container site-footer__inner">
+      <div class="site-footer__brand">
+        <div class="site-footer__logo">&#9729; cloud_hosting.ru</div>
+        <p class="site-footer__desc">Надёжные облачные серверы для бизнеса и разработчиков</p>
+      </div>
+    </div>
+    <div class="site-footer__bottom container">
+      <span>&copy; 2026 cloud_hosting.ru</span>
+      <span>Русский</span>
+    </div>
+  </footer>
+
+  <script type="module" src="detail.js"></script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>cloud_hosting.ru — 3D Галерея оборудования</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/examples/jsm/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a href="pages/index.html" class="site-logo">
+        <span class="site-logo__icon">&#9729;</span>
+        cloud_hosting.ru
+      </a>
+      <nav class="site-nav">
+        <a href="pages/index.html" class="nav__link">Главная</a>
+        <a href="pages/tariffs.html" class="nav__link">Продукты</a>
+        <a href="pages/calculator.html" class="nav__link">Калькулятор</a>
+        <a href="#" class="nav__link nav__link--active">3D Галерея</a>
+        <a href="pages/about.html" class="nav__link">О компании</a>
+      </nav>
+      <form class="gallery-upload" id="uploadForm">
+        <label class="gallery-upload__label" for="fileInput">Загрузить .glb</label>
+        <input type="file" id="fileInput" accept=".glb" hidden />
+        <span class="gallery-upload__filename" id="fileName">Файл не выбран</span>
+        <button type="submit" class="gallery-upload__btn" id="uploadBtn" disabled>Добавить</button>
+      </form>
+    </div>
+  </header>
+
+  <main class="gallery-page">
+    <div class="container">
+      <div class="gallery-page__hero">
+        <h1>3D Галерея оборудования</h1>
+        <p>Интерактивный предпросмотр серверного и сетевого оборудования. Кликните на карточку для детального осмотра модели.</p>
+      </div>
+      <div class="gallery" id="gallery"></div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container site-footer__inner">
+      <div class="site-footer__brand">
+        <div class="site-footer__logo">&#9729; cloud_hosting.ru</div>
+        <p class="site-footer__desc">Надёжные облачные серверы для бизнеса и разработчиков</p>
+      </div>
+      <div class="site-footer__col">
+        <div class="site-footer__heading">Продукты</div>
+        <a href="#">Виртуальная машина</a>
+        <a href="#">Kubernetes</a>
+        <a href="#">S3-хранилище</a>
+      </div>
+      <div class="site-footer__col">
+        <div class="site-footer__heading">Для бизнеса</div>
+        <a href="#">Решения</a>
+        <a href="#">Кейсы</a>
+        <a href="#">Партнеры</a>
+      </div>
+      <div class="site-footer__col">
+        <div class="site-footer__heading">Сообщество</div>
+        <a href="#">Блог</a>
+        <a href="#">Мероприятия</a>
+        <a href="#">Документация</a>
+      </div>
+    </div>
+    <div class="site-footer__bottom container">
+      <span>&copy; 2026 cloud_hosting.ru</span>
+      <span>Русский</span>
+    </div>
+  </footer>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

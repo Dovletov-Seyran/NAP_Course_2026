@@ -10,31 +10,27 @@ export class MainPage {
     return [
       {
         id: 1,
-        src: "https://img.icons8.com/fluency/96/server.png",
-        title: "Старт",
-        price: "299 ₽/мес",
-        text: "1 vCPU · 1 ГБ RAM · 20 ГБ SSD · 100 Мбит/с",
+        src: "https://img.icons8.com/fluency/96/router.png",
+        title: "Маршрутизатор",
+        price: "12 490 ₽",
+        text: "Высокопроизводительный маршрутизатор для построения корпоративной сети. Поддержка VLAN, QoS, VPN.",
+        model: "../models/router.glb",
       },
       {
         id: 2,
-        src: "https://img.icons8.com/fluency/96/cloud.png",
-        title: "Базовый",
-        price: "799 ₽/мес",
-        text: "2 vCPU · 4 ГБ RAM · 60 ГБ SSD · 200 Мбит/с",
+        src: "https://img.icons8.com/fluency/96/server.png",
+        title: "Сервер",
+        price: "89 900 ₽",
+        text: "Стоечный сервер 1U для дата-центров. Intel Xeon, 64 ГБ ECC RAM, 2x SSD NVMe, резервный БП.",
+        model: "../models/server.glb",
       },
       {
         id: 3,
-        src: "https://img.icons8.com/fluency/96/lightning-bolt.png",
-        title: "Бизнес",
-        price: "1 999 ₽/мес",
-        text: "4 vCPU · 8 ГБ RAM · 120 ГБ SSD · 500 Мбит/с",
-      },
-      {
-        id: 4,
-        src: "https://img.icons8.com/fluency/96/server-shutdown.png",
-        title: "Профессионал",
-        price: "3 999 ₽/мес",
-        text: "8 vCPU · 16 ГБ RAM · 240 ГБ SSD · 1 Гбит/с",
+        src: "https://img.icons8.com/fluency/96/laptop.png",
+        title: "Ноутбук администратора",
+        price: "74 990 ₽",
+        text: "Рабочая станция для системного администратора. 16 ГБ RAM, SSD 512 ГБ, IPS-дисплей 15.6\".",
+        model: "../models/laptop.glb",
       },
     ];
   }
@@ -47,8 +43,8 @@ export class MainPage {
     return `
       <div class="lab-section">
         <div class="container">
-          <h2 class="lab-title">Тарифы VPS/VDS</h2>
-          <p class="lab-subtitle">Выберите подходящий тариф — нажмите на карточку, чтобы узнать подробнее</p>
+          <h2 class="lab-title">Каталог оборудования</h2>
+          <p class="lab-subtitle">Выберите оборудование — нажмите на карточку, чтобы посмотреть 3D-модель и подробности</p>
           <div id="main-page" class="d-flex flex-wrap gap-3 justify-content-center"></div>
         </div>
       </div>
@@ -63,10 +59,10 @@ export class MainPage {
     const toastMsg = document.getElementById("lab-toast-msg");
     const data = this.getData().find((d) => d.id == cardId);
     if (toastMsg && data)
-      toastMsg.textContent = `Тариф «${data.title}» — ${data.price}`;
+      toastMsg.textContent = `Выбрано: ${data.title}`;
     if (toastEl) new bootstrap.Toast(toastEl, { delay: 3000 }).show();
 
-    const productPage = new ProductPage(this.parent, cardId);
+    const productPage = new ProductPage(this.parent, cardId, this.getData());
     productPage.render();
   }
 
@@ -79,12 +75,11 @@ export class MainPage {
       productCard.render(item, this.clickCard.bind(this));
     });
 
-    // Если пришли с contact.html с ?open=id — сразу открываем тариф
     const params = new URLSearchParams(window.location.search);
     const openId = params.get("open");
     if (openId) {
       history.replaceState(null, "", window.location.pathname);
-      const productPage = new ProductPage(this.parent, openId);
+      const productPage = new ProductPage(this.parent, openId, this.getData());
       productPage.render();
     }
   }
