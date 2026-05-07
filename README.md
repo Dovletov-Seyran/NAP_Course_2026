@@ -28,6 +28,81 @@
 - Заявки сохраняются в `backend/src/data/requests.json`
 - Форма `contact.html` отправляет данные через fetch
 
+## Ключевые фрагменты кода
+
+### Fetch API — класс Ajax (`modules/ajax.js`)
+
+```js
+class Ajax {
+  async get(url) {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`GET ${url} failed: ${response.status}`);
+    return response.json();
+  }
+
+  async patch(url, data) {
+    const response = await fetch(url, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error(`PATCH ${url} failed: ${response.status}`);
+    return response.json();
+  }
+}
+```
+
+### Загрузка карточек через async/await (`pages/main/index.js`)
+
+```js
+async getData(title = "") {
+  try {
+    const data = await ajax.get(tariffUrls.getTariffs(title));
+    this.renderData(data);
+  } catch (err) {
+    this.pageRoot.innerHTML = `<p style="color:red">Ошибка загрузки</p>`;
+    console.error(err);
+  }
+}
+```
+
+### Редактирование тарифа через PATCH (`pages/product/index.js`)
+
+```js
+const data = await ajax.patch(tariffUrls.updateTariffById(this.id), {
+  title, price, text,
+});
+statusEl.textContent = "Сохранено!";
+this.renderData(data);
+```
+
+### Конфигурация Vite (`vite.config.js`)
+
+```js
+export default {
+  root: "./pages",
+  build: {
+    outDir: "../public",
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        index: resolve("./pages/index.html"),
+        tariffs: resolve("./pages/tariffs.html"),
+        calculator: resolve("./pages/calculator.html"),
+        about: resolve("./pages/about.html"),
+        contact: resolve("./pages/contact.html"),
+      },
+    },
+  },
+};
+```
+
+### Раздача статики на бэкенде (`backend/src/index.js`)
+
+```js
+app.use(express.static(path.join(__dirname, "..", "public")));
+```
+
 ## Новые эндпоинты API
 
 | Метод | URL       | Описание            |
@@ -50,7 +125,8 @@ backend/src/
 
 frontend/
 ├── vite.config.js
-└── public/             ← результат сборки
+├── package.json          ← скрипты dev/build/preview
+└── public/               ← результат сборки
 ```
 
 ## Технологии
@@ -64,11 +140,15 @@ frontend/
 ```bash
 # Сборка фронтенда
 cd frontend
+npm install
 npm run build
+
+# Копируем сборку в бэкенд
 cp -r public ../backend/public
 
 # Запуск сервера
 cd ../backend
+npm install
 npm run dev
 ```
 

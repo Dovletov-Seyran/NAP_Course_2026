@@ -21,12 +21,9 @@ export class ProductPage {
   }
 
   renderData(item) {
-    console.log("renderData called", item);
-    console.log("pageRoot:", this.pageRoot);
     this.pageRoot.innerHTML = "";
     const backButton = new BackButtonComponent(this.pageRoot);
     backButton.render(this.clickBack.bind(this));
-    console.log("back button rendered");
     const product = new ProductComponent(this.pageRoot);
     product.render(item);
     this.pageRoot.insertAdjacentHTML("beforeend", this.getEditFormHTML(item));
@@ -63,7 +60,6 @@ export class ProductPage {
     document
       .getElementById("edit-save-btn")
       .addEventListener("click", async () => {
-        console.log("save clicked");
         const title = document.getElementById("edit-title").value.trim();
         const price = document.getElementById("edit-price").value.trim();
         const text = document.getElementById("edit-text").value.trim();
@@ -76,21 +72,15 @@ export class ProductPage {
         }
 
         try {
-          console.log(
-            "sending PATCH to:",
-            tariffUrls.updateTariffById(this.id),
-          );
           const data = await ajax.patch(tariffUrls.updateTariffById(this.id), {
             title,
             price,
             text,
           });
-          console.log("PATCH response:", data);
-          statusEl.textContent = "✅ Сохранено!";
+          statusEl.textContent = "Сохранено!";
           statusEl.style.color = "var(--green)";
           this.renderData(data);
         } catch (err) {
-          console.log("PATCH error:", err);
           statusEl.textContent = "Ошибка сохранения";
           statusEl.style.color = "red";
         }
