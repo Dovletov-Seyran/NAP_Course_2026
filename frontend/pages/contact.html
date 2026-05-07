@@ -1,68 +1,140 @@
-<script type="module">
-  import { HeaderComponent } from "../js/components/header/index.js";
-  import { FooterComponent } from "../js/components/footer/index.js";
-  new HeaderComponent(document.body).render();
-  new FooterComponent(document.body).render();
-</script>
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>cloud_hosting.ru — Заявка</title>
+    <link rel="stylesheet" href="../css/style.css" />
+  </head>
+  <body>
+    <main>
+      <div class="contact-section">
+        <div class="container" style="max-width: 600px;">
 
-<script>
-  window.addEventListener("DOMContentLoaded", () => {
-    const params = new URLSearchParams(window.location.search);
-    const fromId = params.get("from");
+          <div id="back-buttons" style="display:none; gap:12px; margin-bottom:24px;">
+            <button class="form-submit" id="back-to-product" style="max-width:200px; font-size:14px; padding:10px 20px;">
+              &larr; К тарифу
+            </button>
+            <button class="form-submit" id="back-to-all" style="max-width:200px; font-size:14px; padding:10px 20px; background:var(--text);">
+              Все тарифы
+            </button>
+          </div>
 
-    if (fromId) {
-      document.getElementById("back-buttons").style.display = "flex";
+          <div class="contact-form-card" id="form-content">
+            <h2>Оставить заявку</h2>
 
-      const select = document.getElementById("field-tariff");
-      for (const option of select.options) {
-        if (option.value === fromId) {
-          option.selected = true;
-          break;
-        }
-      }
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Имя <span>*</span></label>
+                <input type="text" class="form-input" id="field-name" placeholder="Ваше имя" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Телефон <span>*</span></label>
+                <input type="tel" class="form-input" id="field-phone" placeholder="+7 (___) ___-__-__" />
+              </div>
+            </div>
 
-      document
-        .getElementById("back-to-product")
-        .addEventListener("click", () => {
-          window.location.href = "tariffs.html?open=" + fromId;
-        });
+            <div class="form-group">
+              <label class="form-label">Email <span>*</span></label>
+              <input type="email" class="form-input" id="field-email" placeholder="email@example.com" />
+            </div>
 
-      document.getElementById("back-to-all").addEventListener("click", () => {
-        window.location.href = "tariffs.html";
-      });
-    }
+            <div class="form-group">
+              <label class="form-label">Тариф</label>
+              <select class="form-select" id="field-tariff">
+                <option value="">Не выбран</option>
+                <option value="1">Старт — 500 ₽/мес</option>
+                <option value="2">Базовый — 1 085 ₽/мес</option>
+                <option value="3">Бизнес — 1 060 ₽/мес</option>
+                <option value="4">Профессионал — 3 999 ₽/мес</option>
+              </select>
+            </div>
 
-    document
-      .getElementById("form-submit-btn")
-      .addEventListener("click", async function () {
-        const name = document.getElementById("field-name").value.trim();
-        const phone = document.getElementById("field-phone").value.trim();
-        const email = document.getElementById("field-email").value.trim();
-        const tariff = document.getElementById("field-tariff").value;
-        const comment = document.getElementById("field-comment").value.trim();
+            <div class="form-group">
+              <label class="form-label">Комментарий</label>
+              <textarea class="form-textarea" id="field-comment" placeholder="Расскажите о вашем проекте..."></textarea>
+            </div>
 
-        if (!name || !phone || !email) {
-          alert(
-            "Пожалуйста, заполните обязательные поля: Имя, Телефон и Email",
-          );
-          return;
-        }
+            <button class="form-submit" id="form-submit-btn">Отправить заявку &rarr;</button>
 
-        try {
-          const res = await fetch("/requests", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, phone, email, tariff, comment }),
+            <p class="form-note">Нажимая кнопку, вы соглашаетесь с условиями обработки данных</p>
+          </div>
+
+          <div class="form-success" id="form-success">
+            <div class="form-success__icon">&#10004;</div>
+            <h3>Заявка отправлена!</h3>
+            <p style="color:var(--muted); margin-top:8px;">Мы свяжемся с вами в ближайшее время.</p>
+          </div>
+
+        </div>
+      </div>
+    </main>
+
+    <script type="module">
+      import { HeaderComponent } from "../js/components/header/index.js";
+      import { FooterComponent } from "../js/components/footer/index.js";
+      new HeaderComponent(document.body).render();
+      new FooterComponent(document.body).render();
+    </script>
+
+    <script>
+      window.addEventListener("DOMContentLoaded", () => {
+        const params = new URLSearchParams(window.location.search);
+        const fromId = params.get("from");
+
+        if (fromId) {
+          document.getElementById("back-buttons").style.display = "flex";
+
+          const select = document.getElementById("field-tariff");
+          for (const option of select.options) {
+            if (option.value === fromId) {
+              option.selected = true;
+              break;
+            }
+          }
+
+          document
+            .getElementById("back-to-product")
+            .addEventListener("click", () => {
+              window.location.href = "tariffs.html?open=" + fromId;
+            });
+
+          document.getElementById("back-to-all").addEventListener("click", () => {
+            window.location.href = "tariffs.html";
           });
-
-          if (!res.ok) throw new Error("Ошибка отправки");
-
-          document.getElementById("form-content").style.display = "none";
-          document.getElementById("form-success").style.display = "block";
-        } catch (err) {
-          alert("Ошибка при отправке заявки. Попробуйте снова.");
-          console.error(err);
         }
+
+        document
+          .getElementById("form-submit-btn")
+          .addEventListener("click", async function () {
+            const name = document.getElementById("field-name").value.trim();
+            const phone = document.getElementById("field-phone").value.trim();
+            const email = document.getElementById("field-email").value.trim();
+            const tariff = document.getElementById("field-tariff").value;
+            const comment = document.getElementById("field-comment").value.trim();
+
+            if (!name || !phone || !email) {
+              alert("Пожалуйста, заполните обязательные поля: Имя, Телефон и Email");
+              return;
+            }
+
+            try {
+              const res = await fetch("/requests", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, phone, email, tariff, comment }),
+              });
+
+              if (!res.ok) throw new Error("Ошибка отправки");
+
+              document.getElementById("form-content").style.display = "none";
+              document.getElementById("form-success").style.display = "block";
+            } catch (err) {
+              alert("Ошибка при отправке заявки. Попробуйте снова.");
+              console.error(err);
+            }
+          });
       });
-  });
-</script>
+    </script>
+  </body>
+</html>

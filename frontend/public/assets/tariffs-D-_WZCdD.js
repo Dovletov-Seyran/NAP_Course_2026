@@ -1,4 +1,4 @@
-import{H as l,F as p}from"./index-Cy6QL_7t.js";/* empty css              */class u{constructor(t){this.parent=t}getHTML(t){return`
+import{H as l,F as p}from"./index-C2lhrljC.js";class u{constructor(t){this.parent=t}getHTML(t){return`
       <div class="card lab-card" style="width: 220px;">
         <div class="card-body text-center">
           <img src="${t.src}" alt="${t.title}" class="mb-3" width="64" height="64">
