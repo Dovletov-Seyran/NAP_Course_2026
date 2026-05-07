@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { saveModel, getAllModels } from './idb.js';
 
-/* ===== Preset models ===== */
+/* Preset models */
 const PRESET_MODELS = [
   { name: 'Сервер', files: ['models/server.glb'] },
   { name: 'Ноутбук', files: ['models/laptop.glb'] },
@@ -16,7 +16,6 @@ const fileName = document.getElementById('fileName');
 const uploadBtn = document.getElementById('uploadBtn');
 const uploadForm = document.getElementById('uploadForm');
 
-/* ===== Render a single-frame preview into a canvas ===== */
 function renderPreview(canvas, urls, { fromIDB = false } = {}) {
   const width = canvas.clientWidth || 300;
   const height = canvas.clientHeight || 300;
@@ -73,7 +72,6 @@ function renderPreview(canvas, urls, { fromIDB = false } = {}) {
       group.add(model);
     });
 
-    /* Re-center the whole group for paired models */
     if (results.length > 1) {
       const groupBox = new THREE.Box3().setFromObject(group);
       const groupCenter = groupBox.getCenter(new THREE.Vector3());
@@ -83,7 +81,6 @@ function renderPreview(canvas, urls, { fromIDB = false } = {}) {
 
     scene.add(group);
 
-    /* Fit camera */
     const bbox = new THREE.Box3().setFromObject(group);
     const bsize = bbox.getSize(new THREE.Vector3());
     const bcenter = bbox.getCenter(new THREE.Vector3());
@@ -92,15 +89,13 @@ function renderPreview(canvas, urls, { fromIDB = false } = {}) {
     camera.position.set(bcenter.x + dist * 0.5, bcenter.y + dist * 0.4, bcenter.z + dist);
     camera.lookAt(bcenter);
 
-    /* Single frame render */
     renderer.render(scene, camera);
 
-    /* Dispose to free memory */
     renderer.dispose();
   });
 }
 
-/* ===== Create a card element ===== */
+/* Create a card element */
 function createCard(name, urls, { fromIDB = false } = {}) {
   const card = document.createElement('div');
   card.className = 'card';
@@ -111,7 +106,6 @@ function createCard(name, urls, { fromIDB = false } = {}) {
   const canvas = document.createElement('canvas');
   canvasWrap.appendChild(canvas);
 
-  /* Fallback puzzle icon */
   const fallback = document.createElement('div');
   fallback.className = 'card__fallback';
   fallback.textContent = '🧩';
@@ -137,7 +131,6 @@ function createCard(name, urls, { fromIDB = false } = {}) {
 
   gallery.appendChild(card);
 
-  /* Wait for layout, then render preview */
   requestAnimationFrame(() => {
     canvas.width = canvasWrap.clientWidth;
     canvas.height = canvasWrap.clientHeight;
@@ -148,21 +141,19 @@ function createCard(name, urls, { fromIDB = false } = {}) {
       renderPreview(canvas, urls);
     }
 
-    /* Hide fallback after a short delay (if model loads) */
     setTimeout(() => {
       fallback.style.display = 'none';
     }, 2000);
   });
 }
 
-/* ===== Init gallery ===== */
+/* Init gallery */
 async function init() {
   /* Preset models */
   PRESET_MODELS.forEach((m) => {
     createCard(m.name, m.files);
   });
 
-  /* User models from IndexedDB */
   try {
     const userModels = await getAllModels();
     userModels.forEach((m) => {
@@ -173,7 +164,7 @@ async function init() {
   }
 }
 
-/* ===== Upload handling ===== */
+/* \Upload handling */
 let selectedFile = null;
 
 fileInput.addEventListener('change', () => {
@@ -193,10 +184,8 @@ uploadForm.addEventListener('submit', async (e) => {
 
   await saveModel(modelName, arrayBuffer);
 
-  /* Add card immediately */
   createCard(modelName, [arrayBuffer], { fromIDB: true });
 
-  /* Reset form */
   selectedFile = null;
   fileInput.value = '';
   fileName.textContent = 'Файл не выбран';
