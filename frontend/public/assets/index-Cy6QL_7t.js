@@ -1,17 +1,17 @@
-(function(){let e=document.createElement(`link`).relList;if(e&&e.supports&&e.supports(`modulepreload`))return;for(let e of document.querySelectorAll(`link[rel="modulepreload"]`))n(e);new MutationObserver(e=>{for(let t of e)if(t.type===`childList`)for(let e of t.addedNodes)e.tagName===`LINK`&&e.rel===`modulepreload`&&n(e)}).observe(document,{childList:!0,subtree:!0});function t(e){let t={};return e.integrity&&(t.integrity=e.integrity),e.referrerPolicy&&(t.referrerPolicy=e.referrerPolicy),e.crossOrigin===`use-credentials`?t.credentials=`include`:e.crossOrigin===`anonymous`?t.credentials=`omit`:t.credentials=`same-origin`,t}function n(e){if(e.ep)return;e.ep=!0;let n=t(e);fetch(e.href,n)}})();var e=class{constructor(e){this.parent=e}getHTML(){let e=window.location.pathname.split(`/`).pop();return`
+(function(){const r=document.createElement("link").relList;if(r&&r.supports&&r.supports("modulepreload"))return;for(const e of document.querySelectorAll('link[rel="modulepreload"]'))s(e);new MutationObserver(e=>{for(const t of e)if(t.type==="childList")for(const o of t.addedNodes)o.tagName==="LINK"&&o.rel==="modulepreload"&&s(o)}).observe(document,{childList:!0,subtree:!0});function i(e){const t={};return e.integrity&&(t.integrity=e.integrity),e.referrerPolicy&&(t.referrerPolicy=e.referrerPolicy),e.crossOrigin==="use-credentials"?t.credentials="include":e.crossOrigin==="anonymous"?t.credentials="omit":t.credentials="same-origin",t}function s(e){if(e.ep)return;e.ep=!0;const t=i(e);fetch(e.href,t)}})();class n{constructor(r){this.parent=r}getHTML(){const r=window.location.pathname.split("/").pop();return`
       <header class="site-header">
         <div class="container site-header__inner">
           <a href="index.html" class="site-logo">
             <span class="site-logo__icon">☁</span>
             cloud_hosting.ru
           </a>
-          <nav class="site-nav">${[{label:`Главная`,href:`index.html`},{label:`Продукты`,href:`tariffs.html`},{label:`Калькулятор`,href:`calculator.html`},{label:`О компании`,href:`about.html`}].map(t=>`
-      <a href="${t.href}" class="nav__link ${e===t.href?`nav__link--active`:``}">${t.label}</a>
-    `).join(``)}</nav>
+          <nav class="site-nav">${[{label:"Главная",href:"index.html"},{label:"Продукты",href:"tariffs.html"},{label:"Калькулятор",href:"calculator.html"},{label:"О компании",href:"about.html"}].map(e=>`
+      <a href="${e.href}" class="nav__link ${r===e.href?"nav__link--active":""}">${e.label}</a>
+    `).join("")}</nav>
           <a href="contact.html" class="site-header__cta">Оставить заявку</a>
         </div>
       </header>
-    `}render(){this.parent.insertAdjacentHTML(`afterbegin`,this.getHTML())}},t=class{constructor(e){this.parent=e}getHTML(){return`
+    `}render(){this.parent.insertAdjacentHTML("afterbegin",this.getHTML())}}class c{constructor(r){this.parent=r}getHTML(){return`
       <footer class="site-footer">
         <div class="container site-footer__inner">
           <div class="site-footer__brand">
@@ -42,4 +42,4 @@
           <span>Русский</span>
         </div>
       </footer>
-    `}render(){this.parent.insertAdjacentHTML(`beforeend`,this.getHTML())}};export{e as n,t};
+    `}render(){this.parent.insertAdjacentHTML("beforeend",this.getHTML())}}export{c as F,n as H};
