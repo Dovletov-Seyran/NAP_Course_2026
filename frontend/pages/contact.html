@@ -34,7 +34,7 @@
 
     document
       .getElementById("form-submit-btn")
-      .addEventListener("click", async function () {
+      .addEventListener("click", function () {
         const name = document.getElementById("field-name").value.trim();
         const phone = document.getElementById("field-phone").value.trim();
         const email = document.getElementById("field-email").value.trim();
@@ -48,21 +48,20 @@
           return;
         }
 
-        try {
-          const res = await fetch("/requests", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, phone, email, tariff, comment }),
-          });
-
-          if (!res.ok) throw new Error("Ошибка отправки");
-
-          document.getElementById("form-content").style.display = "none";
-          document.getElementById("form-success").style.display = "block";
-        } catch (err) {
-          alert("Ошибка при отправке заявки. Попробуйте снова.");
-          console.error(err);
-        }
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "http://localhost:3000/requests");
+        xhr.setRequestHeader("Content-Type", "application/json");
+        xhr.send(JSON.stringify({ name, phone, email, tariff, comment }));
+        xhr.onreadystatechange = function () {
+          if (xhr.readyState === 4) {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              document.getElementById("form-content").style.display = "none";
+              document.getElementById("form-success").style.display = "block";
+            } else {
+              alert("Ошибка при отправке заявки. Попробуйте снова.");
+            }
+          }
+        };
       });
   });
 </script>

@@ -1,27 +1,27 @@
 class TariffUrls {
   constructor() {
-    this.baseUrl = ""; // пустой — запросы идут на тот же домен
+    this.baseUrl = "http://localhost:3000";
   }
 
   getTariffs(title) {
     const query = title ? `?title=${encodeURIComponent(title)}` : "";
-    return `/tariffs${query}`;
+    return `${this.baseUrl}/tariffs${query}`;
   }
 
   getTariffById(id) {
-    return `/tariffs/${id}`;
+    return `${this.baseUrl}/tariffs/${id}`;
   }
 
   createTariff() {
-    return `/tariffs`;
+    return `${this.baseUrl}/tariffs`;
   }
 
   updateTariffById(id) {
-    return `/tariffs/${id}`;
+    return `${this.baseUrl}/tariffs/${id}`;
   }
 
   deleteTariffById(id) {
-    return `/tariffs/${id}`;
+    return `${this.baseUrl}/tariffs/${id}`;
   }
 }
 

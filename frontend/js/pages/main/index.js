@@ -8,14 +8,15 @@ export class MainPage {
     this.parent = parent;
   }
 
-  async getData(title = "") {
-    try {
-      const data = await ajax.get(tariffUrls.getTariffs(title));
-      this.renderData(data);
-    } catch (err) {
-      this.pageRoot.innerHTML = `<p style="color:red">Ошибка загрузки тарифов</p>`;
-      console.error(err);
-    }
+  getData(title = "") {
+    ajax.get(tariffUrls.getTariffs(title), (data, status) => {
+      if (status === 200 && data) {
+        this.renderData(data);
+      } else {
+        this.pageRoot.innerHTML = `<p style="color:red">Ошибка загрузки тарифов</p>`;
+        console.error("Ошибка загрузки:", status);
+      }
+    });
   }
 
   renderData(items) {
