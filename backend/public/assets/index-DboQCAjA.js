@@ -1,1 +1,0 @@
-import{n as e,t}from"./footer-BXBCHSiC.js";new e(document.body).render(),new t(document.body).render();
