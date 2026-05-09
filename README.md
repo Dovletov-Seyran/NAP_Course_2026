@@ -1,4 +1,4 @@
-# ЛР №5 — AJAX-запросы через XMLHttpRequest
+# ЛР №6 — Fetch API, Promise, Vite сборка
 
 > **Тема:** cloud_hosting.ru  
 > [← Вернуться к оглавлению](https://github.com/Dovletov-Seyran/NAP_Course_2026)
@@ -9,15 +9,15 @@
 
 - [Цель](#цель)
 - [Что реализовано](#что-реализовано)
-- [Структура модулей](#структура-модулей)
-- [Класс Ajax — XMLHttpRequest](#класс-ajax--xmlhttprequest)
-  - [GET-запрос](#get-запрос)
-  - [PATCH-запрос](#patch-запрос)
-  - [Обработка ответа](#обработка-ответа)
-- [Класс TariffUrls — эндпоинты](#класс-tariffurls--эндпоинты)
-- [Главная страница — загрузка и фильтрация](#главная-страница--загрузка-и-фильтрация)
-- [Страница тарифа — PATCH редактирование](#страница-тарифа--patch-редактирование)
-- [CORS](#cors)
+- [Часть 1 — Fetch API](#часть-1--fetch-api)
+  - [Класс Ajax на fetch](#класс-ajax-на-fetch)
+  - [async/await в страницах](#asyncawait-в-страницах)
+  - [Сравнение с XHR (ЛР №5)](#сравнение-с-xhr-лр-5)
+- [Часть 2 — Vite сборка](#часть-2--vite-сборка)
+  - [Конфигурация Vite](#конфигурация-vite)
+  - [Раздача статики с бэкенда](#раздача-статики-с-бэкенда)
+- [Форма заявок](#форма-заявок)
+- [Структура проекта](#структура-проекта)
 - [API эндпоинты](#api-эндпоинты)
 - [Запуск](#запуск)
 
@@ -25,152 +25,182 @@
 
 ## Цель
 
-Подключить фронтенд к бэкенду (ЛР №4) через XMLHttpRequest. Карточки тарифов приходят с сервера по API, а не захардкожены в коде.
+Замена XMLHttpRequest на fetch + async/await. Сборка фронтенда через Vite и раздача статики с бэкенда для устранения CORS.
 
 ## Что реализовано
 
-- Класс `Ajax` с методами get, post, patch, delete на основе XMLHttpRequest
-- Класс `TariffUrls` для централизованного хранения URL-адресов API
-- Главная страница: загрузка списка тарифов через GET + фильтрация по названию
-- Страница тарифа: загрузка по ID через GET + редактирование через PATCH
-- Вариант 3: обновление карточки через PATCH-запрос
+- Класс `Ajax` переписан с XHR на fetch + async/await
+- Все методы возвращают Promise вместо коллбеков
+- Обработка ошибок через try/catch
+- Сборка фронтенда через Vite 5
+- Бэкенд раздаёт собранный фронтенд как статику
+- Фронт и бэк на одном домене — CORS не нужен
+- Форма заявок: POST /requests через fetch
 
-## Структура модулей
+## Часть 1 — Fetch API
 
-```
-frontend/js/
-├── modules/
-│   ├── ajax.js           ← класс Ajax (XMLHttpRequest + callbacks)
-│   └── tariffUrls.js     ← эндпоинты API тарифов
-├── pages/
-│   ├── main/index.js     ← главная с карточками + фильтр
-│   └── product/index.js  ← страница тарифа + PATCH-форма
-└── components/
-    ├── product-card/     ← компонент карточки
-    ├── product/          ← компонент детальной карточки
-    ├── header/           ← шапка
-    ├── footer/           ← подвал
-    └── back-button/      ← кнопка «Назад»
-```
+### Класс Ajax на fetch
 
-## Класс Ajax — XMLHttpRequest
-
-### GET-запрос
-
-Создаём `XMLHttpRequest`, открываем соединение, отправляем. Ответ ловим через `onreadystatechange` — вызывается при каждой смене состояния. `readyState === 4` означает «запрос завершён»:
+Каждый метод теперь `async` и возвращает Promise. Вместо callback — `return response.json()`:
 
 ```js
-get(url, callback) {
-  const xhr = new XMLHttpRequest();
-  xhr.open('GET', url);
-  xhr.send();
-  xhr.onreadystatechange = () => {
-    if (xhr.readyState === 4) {
-      this._handleResponse(xhr, callback);
-    }
-  };
-}
-```
+class Ajax {
+  async get(url) {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`GET ${url} failed: ${response.status}`);
+    return response.json();
+  }
 
-### PATCH-запрос
+  async post(url, data) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error(`POST failed: ${response.status}`);
+    return response.json();
+  }
 
-Для отправки JSON ставим заголовок `Content-Type` и сериализуем данные:
+  async patch(url, data) {
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error(`PATCH failed: ${response.status}`);
+    return response.json();
+  }
 
-```js
-patch(url, data, callback) {
-  const xhr = new XMLHttpRequest();
-  xhr.open('PATCH', url);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.send(JSON.stringify(data));
-  xhr.onreadystatechange = () => {
-    if (xhr.readyState === 4) {
-      this._handleResponse(xhr, callback);
-    }
-  };
-}
-```
-
-### Обработка ответа
-
-Парсим JSON из `responseText`, вызываем callback с данными и HTTP-статусом:
-
-```js
-_handleResponse(xhr, callback) {
-  try {
-    const data = xhr.responseText ? JSON.parse(xhr.responseText) : null;
-    callback(data, xhr.status);
-  } catch (e) {
-    console.error('Ошибка парсинга JSON:', e);
-    callback(null, xhr.status);
+  async delete(url) {
+    const response = await fetch(url, { method: 'DELETE' });
+    if (!response.ok) throw new Error(`DELETE failed: ${response.status}`);
+    return response.status === 204 ? null : response.json();
   }
 }
 ```
 
-## Класс TariffUrls — эндпоинты
+### async/await в страницах
 
-Все URL в одном месте. Если сервер переедет на другой адрес — меняем только `baseUrl`:
+Код стал линейным — вместо вложенных коллбеков:
+
+```js
+// Было (ЛР №5 — XHR + callback):
+getData(title) {
+  ajax.get(tariffUrls.getTariffs(title), (data, status) => {
+    if (status === 200) this.renderData(data);
+  });
+}
+
+// Стало (ЛР №6 — fetch + async/await):
+async getData(title = '') {
+  try {
+    const data = await ajax.get(tariffUrls.getTariffs(title));
+    this.renderData(data);
+  } catch (err) {
+    this.pageRoot.innerHTML = '<p style="color:red">Ошибка загрузки</p>';
+  }
+}
+```
+
+### Сравнение с XHR (ЛР №5)
+
+| | ЛР №5 (XHR) | ЛР №6 (fetch) |
+|---|---|---|
+| Синтаксис | Коллбеки | Promise / async await |
+| Обработка ошибок | `if (status !== 200)` в callback | `try/catch` |
+| Читаемость | Вложенность при цепочке запросов | Линейный код |
+| Ответ | `xhr.responseText` → `JSON.parse()` | `response.json()` (Promise) |
+
+## Часть 2 — Vite сборка
+
+### Конфигурация Vite
+
+`vite.config.js` — точка входа `pages/`, сборка в `public/`, multi-page setup:
+
+```js
+import { resolve } from 'path';
+
+export default {
+  root: './pages',
+  build: {
+    outDir: '../public',
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        index:      resolve('./pages/index.html'),
+        tariffs:    resolve('./pages/tariffs.html'),
+        calculator: resolve('./pages/calculator.html'),
+        about:      resolve('./pages/about.html'),
+        contact:    resolve('./pages/contact.html'),
+      },
+    },
+  },
+};
+```
+
+Скрипты в `package.json`:
+
+```json
+{
+  "scripts": {
+    "dev":     "vite",
+    "build":   "vite build",
+    "preview": "vite preview"
+  }
+}
+```
+
+### Раздача статики с бэкенда
+
+Собранную папку `public` копируем в бэкенд. Express раздаёт её как статику:
+
+```js
+// backend/src/index.js
+app.use(express.static(path.join(__dirname, '..', 'public')));
+```
+
+Теперь фронтенд и API на одном домене `http://localhost:3000`. `baseUrl` пустой — запросы идут на тот же origin:
 
 ```js
 class TariffUrls {
   constructor() {
-    this.baseUrl = 'http://localhost:3000';
+    this.baseUrl = '';  // тот же домен
   }
   getTariffs(title) {
-    const query = title ? `?title=${encodeURIComponent(title)}` : '';
-    return `${this.baseUrl}/tariffs${query}`;
-  }
-  getTariffById(id) {
-    return `${this.baseUrl}/tariffs/${id}`;
-  }
-  updateTariffById(id) {
-    return `${this.baseUrl}/tariffs/${id}`;
+    return `/tariffs${title ? `?title=${encodeURIComponent(title)}` : ''}`;
   }
 }
 ```
 
-## Главная страница — загрузка и фильтрация
+## Форма заявок
 
-При загрузке вызывается `getData()`, который делает GET-запрос. В callback рисуются карточки. Поле фильтра при вводе вызывает `getData(value)` — запрос летит с `?title=...`:
+Новый эндпоинт `POST /requests` для формы обратной связи. Заявки сохраняются в JSON-файл:
 
 ```js
-getData(title = '') {
-  ajax.get(tariffUrls.getTariffs(title), (data, status) => {
-    if (status === 200 && data) {
-      this.renderData(data);
-    } else {
-      this.pageRoot.innerHTML = '<p style="color:red">Ошибка загрузки</p>';
-    }
-  });
-}
-
-// Фильтрация при вводе
-document.getElementById('filter-input').addEventListener('input', (e) => {
-  this.getData(e.target.value);
+// frontend/pages/contact.html
+const res = await fetch('/requests', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name, phone, email, tariff, comment }),
 });
 ```
 
-## Страница тарифа — PATCH редактирование
+## Структура проекта
 
-Форма с тремя полями. При клике на «Сохранить» отправляется PATCH-запрос с обновлёнными данными:
-
-```js
-ajax.patch(
-  tariffUrls.updateTariffById(this.id),
-  { title, price, text },
-  (data, status) => {
-    if (status === 200 && data) {
-      statusEl.textContent = 'Сохранено!';
-      this.renderData(data);   // перерисовываем карточку
-    } else {
-      statusEl.textContent = 'Ошибка сохранения';
-    }
-  }
-);
 ```
+frontend/
+├── js/modules/ajax.js        ← fetch + async/await
+├── js/modules/tariffUrls.js  ← URL (baseUrl пустой)
+├── vite.config.js             ← конфигурация сборки
+├── package.json               ← dev / build / preview
+└── public/                    ← результат npm run build
 
-## CORS
-
-Фронтенд на Live Server (порт 5500), бэкенд на Express (порт 3000) — разные домены. Браузер блокирует кроссдоменные запросы. Решение: на сервере подключён `app.use(cors())`, который добавляет заголовок `Access-Control-Allow-Origin: *`.
+backend/
+├── src/index.js               ← express.static + API
+├── src/routes/requests.js     ← POST /requests
+├── src/data/requests.json     ← хранение заявок
+└── public/                    ← копия сборки фронтенда
+```
 
 ## API эндпоинты
 
@@ -178,17 +208,25 @@ ajax.patch(
 |--------|----------------|--------------------------------|
 | GET    | /tariffs       | Список тарифов (?title=фильтр) |
 | GET    | /tariffs/:id   | Тариф по ID                    |
-| POST   | /tariffs       | Создать тариф                  |
 | PATCH  | /tariffs/:id   | Обновить тариф                 |
-| DELETE | /tariffs/:id   | Удалить тариф                  |
+| POST   | /requests      | Создать заявку                 |
+| GET    | /requests      | Все заявки                     |
 
 ## Запуск
 
 ```bash
-# 1. Бэкенд
-cd backend && npm install && npm run dev
-# Сервер на http://localhost:3000
+# 1. Сборка фронтенда
+cd frontend
+npm install
+npm run build
 
-# 2. Фронтенд — через Live Server в VS Code
-# Открыть frontend/pages/tariffs.html
+# 2. Копируем в бэкенд
+cp -r public ../backend/public
+
+# 3. Запуск сервера
+cd ../backend
+npm install
+npm run dev
+
+# Открыть http://localhost:3000
 ```
