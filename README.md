@@ -1,36 +1,47 @@
+# ЛР №6 — Fetch API, Promise, Vite сборка
+
+> **Тема:** cloud_hosting.ru  
+> [← Вернуться к оглавлению](https://github.com/Dovletov-Seyran/NAP_Course_2026)
+
 ---
 
-# Лабораторная работа №6 — Fetch API, Promise, Vite сборка
+## Содержание
+
+- [Цель](#цель)
+- [Что реализовано](#что-реализовано)
+- [Часть 1 — Fetch API](#часть-1--fetch-api)
+  - [Класс Ajax на fetch](#класс-ajax-на-fetch)
+  - [async/await в страницах](#asyncawait-в-страницах)
+  - [Сравнение с XHR (ЛР №5)](#сравнение-с-xhr-лр-5)
+- [Часть 2 — Vite сборка](#часть-2--vite-сборка)
+  - [Конфигурация Vite](#конфигурация-vite)
+  - [Раздача статики с бэкенда](#раздача-статики-с-бэкенда)
+- [Форма заявок](#форма-заявок)
+- [Структура проекта](#структура-проекта)
+- [API эндпоинты](#api-эндпоинты)
+- [Запуск](#запуск)
+
+---
 
 ## Цель
 
-Замена XMLHttpRequest на современный fetch API с async/await, сборка фронтенда через Vite и раздача статики с бэкенда.
+Замена XMLHttpRequest на fetch + async/await. Сборка фронтенда через Vite и раздача статики с бэкенда для устранения CORS.
 
 ## Что реализовано
 
-### Часть 1 — Fetch API
-
 - Класс `Ajax` переписан с XHR на fetch + async/await
-- Все методы (get, post, patch, delete) возвращают Promise
-- Обработка ошибок через try/catch вместо коллбеков
-- Страница тарифов: загрузка через fetch + фильтрация по названию
-- Страница тарифа: загрузка по ID + редактирование через PATCH
-
-### Часть 2 — Vite сборка + статика
-
-- Фронтенд собирается через Vite в папку `frontend/public`
+- Все методы возвращают Promise вместо коллбеков
+- Обработка ошибок через try/catch
+- Сборка фронтенда через Vite 5
 - Бэкенд раздаёт собранный фронтенд как статику
-- Фронт и бэк на одном домене `http://localhost:3000` — CORS не нужен
+- Фронт и бэк на одном домене — CORS не нужен
+- Форма заявок: POST /requests через fetch
 
-### Дополнительно — Форма заявок
+## Часть 1 — Fetch API
 
-- Новый эндпоинт `POST /requests` на бэкенде
-- Заявки сохраняются в `backend/src/data/requests.json`
-- Форма `contact.html` отправляет данные через fetch
+### Класс Ajax на fetch
 
-## Ключевые фрагменты кода
-
-### Fetch API — класс Ajax (`modules/ajax.js`)
+Каждый метод теперь `async` и возвращает Promise. Вместо callback — `return response.json()`:
 
 ```js
 class Ajax {
@@ -40,116 +51,182 @@ class Ajax {
     return response.json();
   }
 
-  async patch(url, data) {
+  async post(url, data) {
     const response = await fetch(url, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    if (!response.ok) throw new Error(`PATCH ${url} failed: ${response.status}`);
+    if (!response.ok) throw new Error(`POST failed: ${response.status}`);
     return response.json();
+  }
+
+  async patch(url, data) {
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error(`PATCH failed: ${response.status}`);
+    return response.json();
+  }
+
+  async delete(url) {
+    const response = await fetch(url, { method: 'DELETE' });
+    if (!response.ok) throw new Error(`DELETE failed: ${response.status}`);
+    return response.status === 204 ? null : response.json();
   }
 }
 ```
 
-### Загрузка карточек через async/await (`pages/main/index.js`)
+### async/await в страницах
+
+Код стал линейным — вместо вложенных коллбеков:
 
 ```js
-async getData(title = "") {
+// Было (ЛР №5 — XHR + callback):
+getData(title) {
+  ajax.get(tariffUrls.getTariffs(title), (data, status) => {
+    if (status === 200) this.renderData(data);
+  });
+}
+
+// Стало (ЛР №6 — fetch + async/await):
+async getData(title = '') {
   try {
     const data = await ajax.get(tariffUrls.getTariffs(title));
     this.renderData(data);
   } catch (err) {
-    this.pageRoot.innerHTML = `<p style="color:red">Ошибка загрузки</p>`;
-    console.error(err);
+    this.pageRoot.innerHTML = '<p style="color:red">Ошибка загрузки</p>';
   }
 }
 ```
 
-### Редактирование тарифа через PATCH (`pages/product/index.js`)
+### Сравнение с XHR (ЛР №5)
+
+| | ЛР №5 (XHR) | ЛР №6 (fetch) |
+|---|---|---|
+| Синтаксис | Коллбеки | Promise / async await |
+| Обработка ошибок | `if (status !== 200)` в callback | `try/catch` |
+| Читаемость | Вложенность при цепочке запросов | Линейный код |
+| Ответ | `xhr.responseText` → `JSON.parse()` | `response.json()` (Promise) |
+
+## Часть 2 — Vite сборка
+
+### Конфигурация Vite
+
+`vite.config.js` — точка входа `pages/`, сборка в `public/`, multi-page setup:
 
 ```js
-const data = await ajax.patch(tariffUrls.updateTariffById(this.id), {
-  title, price, text,
-});
-statusEl.textContent = "Сохранено!";
-this.renderData(data);
-```
+import { resolve } from 'path';
 
-### Конфигурация Vite (`vite.config.js`)
-
-```js
 export default {
-  root: "./pages",
+  root: './pages',
   build: {
-    outDir: "../public",
+    outDir: '../public',
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        index: resolve("./pages/index.html"),
-        tariffs: resolve("./pages/tariffs.html"),
-        calculator: resolve("./pages/calculator.html"),
-        about: resolve("./pages/about.html"),
-        contact: resolve("./pages/contact.html"),
+        index:      resolve('./pages/index.html'),
+        tariffs:    resolve('./pages/tariffs.html'),
+        calculator: resolve('./pages/calculator.html'),
+        about:      resolve('./pages/about.html'),
+        contact:    resolve('./pages/contact.html'),
       },
     },
   },
 };
 ```
 
-### Раздача статики на бэкенде (`backend/src/index.js`)
+Скрипты в `package.json`:
+
+```json
+{
+  "scripts": {
+    "dev":     "vite",
+    "build":   "vite build",
+    "preview": "vite preview"
+  }
+}
+```
+
+### Раздача статики с бэкенда
+
+Собранную папку `public` копируем в бэкенд. Express раздаёт её как статику:
 
 ```js
-app.use(express.static(path.join(__dirname, "..", "public")));
+// backend/src/index.js
+app.use(express.static(path.join(__dirname, '..', 'public')));
 ```
 
-## Новые эндпоинты API
+Теперь фронтенд и API на одном домене `http://localhost:3000`. `baseUrl` пустой — запросы идут на тот же origin:
 
-| Метод | URL       | Описание            |
-| ----- | --------- | ------------------- |
-| POST  | /requests | Создать заявку      |
-| GET   | /requests | Получить все заявки |
+```js
+class TariffUrls {
+  constructor() {
+    this.baseUrl = '';  // тот же домен
+  }
+  getTariffs(title) {
+    return `/tariffs${title ? `?title=${encodeURIComponent(title)}` : ''}`;
+  }
+}
+```
 
-## Структура новых файлов
+## Форма заявок
+
+Новый эндпоинт `POST /requests` для формы обратной связи. Заявки сохраняются в JSON-файл:
+
+```js
+// frontend/pages/contact.html
+const res = await fetch('/requests', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name, phone, email, tariff, comment }),
+});
+```
+
+## Структура проекта
 
 ```
-backend/src/
-├── controllers/
-│   └── requestsController.js
-├── services/
-│   └── requestsService.js
-├── routes/
-│   └── requests.js
-└── data/
-    └── requests.json
-
 frontend/
-├── vite.config.js
-├── package.json          ← скрипты dev/build/preview
-└── public/               ← результат сборки
+├── js/modules/ajax.js        ← fetch + async/await
+├── js/modules/tariffUrls.js  ← URL (baseUrl пустой)
+├── vite.config.js             ← конфигурация сборки
+├── package.json               ← dev / build / preview
+└── public/                    ← результат npm run build
+
+backend/
+├── src/index.js               ← express.static + API
+├── src/routes/requests.js     ← POST /requests
+├── src/data/requests.json     ← хранение заявок
+└── public/                    ← копия сборки фронтенда
 ```
 
-## Технологии
+## API эндпоинты
 
-- Fetch API
-- Promise / async await
-- Vite 5
+| Метод  | URL            | Описание                        |
+|--------|----------------|--------------------------------|
+| GET    | /tariffs       | Список тарифов (?title=фильтр) |
+| GET    | /tariffs/:id   | Тариф по ID                    |
+| PATCH  | /tariffs/:id   | Обновить тариф                 |
+| POST   | /requests      | Создать заявку                 |
+| GET    | /requests      | Все заявки                     |
 
 ## Запуск
 
 ```bash
-# Сборка фронтенда
+# 1. Сборка фронтенда
 cd frontend
 npm install
 npm run build
 
-# Копируем сборку в бэкенд
+# 2. Копируем в бэкенд
 cp -r public ../backend/public
 
-# Запуск сервера
+# 3. Запуск сервера
 cd ../backend
 npm install
 npm run dev
-```
 
-Открыть `http://localhost:3000`
+# Открыть http://localhost:3000
+```
