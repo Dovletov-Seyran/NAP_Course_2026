@@ -1,4 +1,4 @@
-# ЛР №6 — Fetch API, Promise, Vite сборка
+# ЛР №3 — Компонентный подход
 
 > **Тема:** cloud_hosting.ru  
 > [← Вернуться к оглавлению](https://github.com/Dovletov-Seyran/NAP_Course_2026)
@@ -9,224 +9,169 @@
 
 - [Цель](#цель)
 - [Что реализовано](#что-реализовано)
-- [Часть 1 — Fetch API](#часть-1--fetch-api)
-  - [Класс Ajax на fetch](#класс-ajax-на-fetch)
-  - [async/await в страницах](#asyncawait-в-страницах)
-  - [Сравнение с XHR (ЛР №5)](#сравнение-с-xhr-лр-5)
-- [Часть 2 — Vite сборка](#часть-2--vite-сборка)
-  - [Конфигурация Vite](#конфигурация-vite)
-  - [Раздача статики с бэкенда](#раздача-статики-с-бэкенда)
-- [Форма заявок](#форма-заявок)
 - [Структура проекта](#структура-проекта)
-- [API эндпоинты](#api-эндпоинты)
+- [Компоненты](#компоненты)
+  - [HeaderComponent](#headercomponent)
+  - [ProductCardComponent](#productcardcomponent)
+  - [Навигация между страницами](#навигация-между-страницами)
+- [Данные тарифов](#данные-тарифов)
 - [Запуск](#запуск)
 
 ---
 
 ## Цель
 
-Замена XMLHttpRequest на fetch + async/await. Сборка фронтенда через Vite и раздача статики с бэкенда для устранения CORS.
+Рефакторинг многостраничного сайта из ЛР №1-2 на компонентный подход с использованием ES6-классов и модулей.
 
 ## Что реализовано
 
-- Класс `Ajax` переписан с XHR на fetch + async/await
-- Все методы возвращают Promise вместо коллбеков
-- Обработка ошибок через try/catch
-- Сборка фронтенда через Vite 5
-- Бэкенд раздаёт собранный фронтенд как статику
-- Фронт и бэк на одном домене — CORS не нужен
-- Форма заявок: POST /requests через fetch
-
-## Часть 1 — Fetch API
-
-### Класс Ajax на fetch
-
-Каждый метод теперь `async` и возвращает Promise. Вместо callback — `return response.json()`:
-
-```js
-class Ajax {
-  async get(url) {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`GET ${url} failed: ${response.status}`);
-    return response.json();
-  }
-
-  async post(url, data) {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error(`POST failed: ${response.status}`);
-    return response.json();
-  }
-
-  async patch(url, data) {
-    const response = await fetch(url, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error(`PATCH failed: ${response.status}`);
-    return response.json();
-  }
-
-  async delete(url) {
-    const response = await fetch(url, { method: 'DELETE' });
-    if (!response.ok) throw new Error(`DELETE failed: ${response.status}`);
-    return response.status === 204 ? null : response.json();
-  }
-}
-```
-
-### async/await в страницах
-
-Код стал линейным — вместо вложенных коллбеков:
-
-```js
-// Было (ЛР №5 — XHR + callback):
-getData(title) {
-  ajax.get(tariffUrls.getTariffs(title), (data, status) => {
-    if (status === 200) this.renderData(data);
-  });
-}
-
-// Стало (ЛР №6 — fetch + async/await):
-async getData(title = '') {
-  try {
-    const data = await ajax.get(tariffUrls.getTariffs(title));
-    this.renderData(data);
-  } catch (err) {
-    this.pageRoot.innerHTML = '<p style="color:red">Ошибка загрузки</p>';
-  }
-}
-```
-
-### Сравнение с XHR (ЛР №5)
-
-| | ЛР №5 (XHR) | ЛР №6 (fetch) |
-|---|---|---|
-| Синтаксис | Коллбеки | Promise / async await |
-| Обработка ошибок | `if (status !== 200)` в callback | `try/catch` |
-| Читаемость | Вложенность при цепочке запросов | Линейный код |
-| Ответ | `xhr.responseText` → `JSON.parse()` | `response.json()` (Promise) |
-
-## Часть 2 — Vite сборка
-
-### Конфигурация Vite
-
-`vite.config.js` — точка входа `pages/`, сборка в `public/`, multi-page setup:
-
-```js
-import { resolve } from 'path';
-
-export default {
-  root: './pages',
-  build: {
-    outDir: '../public',
-    emptyOutDir: true,
-    rollupOptions: {
-      input: {
-        index:      resolve('./pages/index.html'),
-        tariffs:    resolve('./pages/tariffs.html'),
-        calculator: resolve('./pages/calculator.html'),
-        about:      resolve('./pages/about.html'),
-        contact:    resolve('./pages/contact.html'),
-      },
-    },
-  },
-};
-```
-
-Скрипты в `package.json`:
-
-```json
-{
-  "scripts": {
-    "dev":     "vite",
-    "build":   "vite build",
-    "preview": "vite preview"
-  }
-}
-```
-
-### Раздача статики с бэкенда
-
-Собранную папку `public` копируем в бэкенд. Express раздаёт её как статику:
-
-```js
-// backend/src/index.js
-app.use(express.static(path.join(__dirname, '..', 'public')));
-```
-
-Теперь фронтенд и API на одном домене `http://localhost:3000`. `baseUrl` пустой — запросы идут на тот же origin:
-
-```js
-class TariffUrls {
-  constructor() {
-    this.baseUrl = '';  // тот же домен
-  }
-  getTariffs(title) {
-    return `/tariffs${title ? `?title=${encodeURIComponent(title)}` : ''}`;
-  }
-}
-```
-
-## Форма заявок
-
-Новый эндпоинт `POST /requests` для формы обратной связи. Заявки сохраняются в JSON-файл:
-
-```js
-// frontend/pages/contact.html
-const res = await fetch('/requests', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ name, phone, email, tariff, comment }),
-});
-```
+- Каждый UI-блок вынесен в отдельный класс-компонент
+- SPA-подобная навигация: переход между списком тарифов и детальной страницей без перезагрузки
+- Данные тарифов в JS-объекте (ещё нет API)
+- Страницы: главная, тарифы, калькулятор, о компании, заявка
 
 ## Структура проекта
 
 ```
-frontend/
-├── js/modules/ajax.js        ← fetch + async/await
-├── js/modules/tariffUrls.js  ← URL (baseUrl пустой)
-├── vite.config.js             ← конфигурация сборки
-├── package.json               ← dev / build / preview
-└── public/                    ← результат npm run build
-
-backend/
-├── src/index.js               ← express.static + API
-├── src/routes/requests.js     ← POST /requests
-├── src/data/requests.json     ← хранение заявок
-└── public/                    ← копия сборки фронтенда
+├── pages/
+│   ├── index.html               // Главная
+│   ├── tariffs.html             // Тарифы (SPA)
+│   ├── calculator.html          // Калькулятор
+│   ├── about.html               // О компании
+│   └── contact.html             // Заявка
+├── js/
+│   ├── components/
+│   │   ├── header/index.js      // Шапка с навигацией
+│   │   ├── footer/index.js      // Подвал
+│   │   ├── product-card/index.js // Карточка тарифа
+│   │   ├── product/index.js     // Детальная карточка
+│   │   └── back-button/index.js // Кнопка «Назад»
+│   ├── pages/
+│   │   ├── main/index.js        // Страница списка тарифов
+│   │   └── product/index.js     // Страница конкретного тарифа
+│   ├── main.js                  // Точка входа
+│   └── script.js                // Калькулятор
+└── css/
+    └── style.css
 ```
 
-## API эндпоинты
+## Компоненты
 
-| Метод  | URL            | Описание                        |
-|--------|----------------|--------------------------------|
-| GET    | /tariffs       | Список тарифов (?title=фильтр) |
-| GET    | /tariffs/:id   | Тариф по ID                    |
-| PATCH  | /tariffs/:id   | Обновить тариф                 |
-| POST   | /requests      | Создать заявку                 |
-| GET    | /requests      | Все заявки                     |
+### HeaderComponent
+
+Шапка сайта с навигацией. Генерирует HTML, подсвечивает текущую страницу:
+
+```js
+export class HeaderComponent {
+  constructor(parent) {
+    this.parent = parent;
+  }
+
+  getHTML() {
+    const currentPage = window.location.pathname.split("/").pop();
+    const navItems = [
+      { label: "Главная", href: "index.html" },
+      { label: "Продукты", href: "tariffs.html" },
+      { label: "Калькулятор", href: "calculator.html" },
+      { label: "О компании", href: "about.html" },
+    ];
+
+    const links = navItems
+      .map(item => `
+        <a href="${item.href}"
+           class="nav__link ${currentPage === item.href ? "nav__link--active" : ""}">
+          ${item.label}
+        </a>`)
+      .join("");
+
+    return `
+      <header class="site-header">
+        <div class="container site-header__inner">
+          <a href="index.html" class="site-logo">
+            <span class="site-logo__icon">☁</span> cloud_hosting.ru
+          </a>
+          <nav class="site-nav">${links}</nav>
+          <a href="contact.html" class="site-header__cta">Оставить заявку</a>
+        </div>
+      </header>`;
+  }
+
+  render() {
+    this.parent.insertAdjacentHTML("afterbegin", this.getHTML());
+  }
+}
+```
+
+### ProductCardComponent
+
+Карточка тарифа с кнопкой и обработчиком клика:
+
+```js
+export class ProductCardComponent {
+  constructor(parent) {
+    this.parent = parent;
+  }
+
+  getHTML(data) {
+    return `
+      <div class="card lab-card" style="width: 220px;">
+        <div class="card-body text-center">
+          <img src="${data.src}" alt="${data.title}" class="mb-3" width="64" height="64">
+          <h5 class="card-title">${data.title}</h5>
+          <p class="lab-price">${data.price}</p>
+          <p class="card-text text-muted small">${data.text}</p>
+          <button class="btn btn-success w-100"
+                  id="click-card-${data.id}"
+                  data-id="${data.id}">Подробнее</button>
+        </div>
+      </div>`;
+  }
+
+  addListeners(data, listener) {
+    document.getElementById(`click-card-${data.id}`)
+      .addEventListener("click", listener);
+  }
+
+  render(data, listener) {
+    this.parent.insertAdjacentHTML("beforeend", this.getHTML(data));
+    this.addListeners(data, listener);
+  }
+}
+```
+
+### Навигация между страницами
+
+При клике на карточку создаётся `ProductPage`, которая заменяет содержимое `#root`. Кнопка «Назад» возвращает `MainPage`:
+
+```js
+// pages/main/index.js
+clickCard(e) {
+  const cardId = e.target.dataset.id;
+  const productPage = new ProductPage(this.parent, cardId);
+  productPage.render();
+}
+
+// pages/product/index.js
+clickBack() {
+  new MainPage(this.parent).render();
+}
+```
+
+## Данные тарифов
+
+На этом этапе данные ещё захардкожены в JS:
+
+```js
+getData() {
+  return [
+    { id: 1, src: "...", title: "Старт",        price: "299 ₽/мес",   text: "1 vCPU · 1 ГБ RAM · 20 ГБ SSD" },
+    { id: 2, src: "...", title: "Базовый",       price: "799 ₽/мес",   text: "2 vCPU · 4 ГБ RAM · 60 ГБ SSD" },
+    { id: 3, src: "...", title: "Бизнес",        price: "1 999 ₽/мес", text: "4 vCPU · 8 ГБ RAM · 120 ГБ SSD" },
+    { id: 4, src: "...", title: "Профессионал",  price: "3 999 ₽/мес", text: "8 vCPU · 16 ГБ RAM · 240 ГБ SSD" },
+  ];
+}
+```
 
 ## Запуск
 
-```bash
-# 1. Сборка фронтенда
-cd frontend
-npm install
-npm run build
-
-# 2. Копируем в бэкенд
-cp -r public ../backend/public
-
-# 3. Запуск сервера
-cd ../backend
-npm install
-npm run dev
-
-# Открыть http://localhost:3000
-```
+Открыть `pages/tariffs.html` через Live Server в VS Code.
