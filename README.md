@@ -1,4 +1,4 @@
-# ЛР №4 — REST API на Express.js
+# ЛР №5 — AJAX-запросы через XMLHttpRequest
 
 > **Тема:** cloud_hosting.ru  
 > [← Вернуться к оглавлению](https://github.com/Dovletov-Seyran/NAP_Course_2026)
@@ -9,213 +9,186 @@
 
 - [Цель](#цель)
 - [Что реализовано](#что-реализовано)
-- [Структура проекта](#структура-проекта)
-- [Архитектура бэкенда](#архитектура-бэкенда)
-  - [Точка входа (index.js)](#точка-входа-indexjs)
-  - [Маршруты (routes)](#маршруты-routes)
-  - [Контроллеры (controllers)](#контроллеры-controllers)
-  - [Сервисы (services)](#сервисы-services)
-  - [Файловый сервис](#файловый-сервис)
+- [Структура модулей](#структура-модулей)
+- [Класс Ajax — XMLHttpRequest](#класс-ajax--xmlhttprequest)
+  - [GET-запрос](#get-запрос)
+  - [PATCH-запрос](#patch-запрос)
+  - [Обработка ответа](#обработка-ответа)
+- [Класс TariffUrls — эндпоинты](#класс-tariffurls--эндпоинты)
+- [Главная страница — загрузка и фильтрация](#главная-страница--загрузка-и-фильтрация)
+- [Страница тарифа — PATCH редактирование](#страница-тарифа--patch-редактирование)
+- [CORS](#cors)
 - [API эндпоинты](#api-эндпоинты)
-- [Данные](#данные)
 - [Запуск](#запуск)
 
 ---
 
 ## Цель
 
-Создание серверной части приложения на Node.js + Express.js с REST API для управления тарифами VPS/VDS.
+Подключить фронтенд к бэкенду (ЛР №4) через XMLHttpRequest. Карточки тарифов приходят с сервера по API, а не захардкожены в коде.
 
 ## Что реализовано
 
-- Express.js сервер на порту 3000
-- REST API с полным CRUD для тарифов
-- Трёхслойная архитектура: routes → controllers → services
-- Хранение данных в JSON-файле
-- CORS middleware для кроссдоменных запросов
-- Логирование запросов
+- Класс `Ajax` с методами get, post, patch, delete на основе XMLHttpRequest
+- Класс `TariffUrls` для централизованного хранения URL-адресов API
+- Главная страница: загрузка списка тарифов через GET + фильтрация по названию
+- Страница тарифа: загрузка по ID через GET + редактирование через PATCH
+- Вариант 3: обновление карточки через PATCH-запрос
 
-## Структура проекта
+## Структура модулей
 
 ```
-backend/
-├── src/
-│   ├── index.js                    // Точка входа, запуск сервера
-│   ├── routes/
-│   │   └── tariffs.js              // Маршруты /tariffs
-│   ├── controllers/
-│   │   └── tariffsController.js    // Обработка запросов/ответов
-│   ├── services/
-│   │   ├── tariffsService.js       // Бизнес-логика (CRUD)
-│   │   └── fileService.js          // Чтение/запись JSON
-│   └── data/
-│       └── tariffs.json            // Данные тарифов
-└── package.json
+frontend/js/
+├── modules/
+│   ├── ajax.js           ← класс Ajax (XMLHttpRequest + callbacks)
+│   └── tariffUrls.js     ← эндпоинты API тарифов
+├── pages/
+│   ├── main/index.js     ← главная с карточками + фильтр
+│   └── product/index.js  ← страница тарифа + PATCH-форма
+└── components/
+    ├── product-card/     ← компонент карточки
+    ├── product/          ← компонент детальной карточки
+    ├── header/           ← шапка
+    ├── footer/           ← подвал
+    └── back-button/      ← кнопка «Назад»
 ```
 
-## Архитектура бэкенда
+## Класс Ajax — XMLHttpRequest
 
-### Точка входа (index.js)
+### GET-запрос
 
-Создание Express-приложения, подключение middleware и маршрутов:
+Создаём `XMLHttpRequest`, открываем соединение, отправляем. Ответ ловим через `onreadystatechange` — вызывается при каждой смене состояния. `readyState === 4` означает «запрос завершён»:
 
 ```js
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
-const tariffsRouter = require('./routes/tariffs');
-const tariffsService = require('./services/tariffsService');
-
-const app = express();
-const PORT = 3000;
-
-tariffsService.init(path.join(__dirname, 'data/tariffs.json'));
-
-app.use(cors());
-app.use(express.json());
-
-// Логирование каждого запроса
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  next();
-});
-
-app.use('/tariffs', tariffsRouter);
-
-app.listen(PORT, () => {
-  console.log(`Сервер запущен: http://localhost:${PORT}`);
-});
+get(url, callback) {
+  const xhr = new XMLHttpRequest();
+  xhr.open('GET', url);
+  xhr.send();
+  xhr.onreadystatechange = () => {
+    if (xhr.readyState === 4) {
+      this._handleResponse(xhr, callback);
+    }
+  };
+}
 ```
 
-### Маршруты (routes)
+### PATCH-запрос
 
-Привязка HTTP-методов к функциям контроллера:
+Для отправки JSON ставим заголовок `Content-Type` и сериализуем данные:
 
 ```js
-const express = require('express');
-const router = express.Router();
-const tariffsController = require('../controllers/tariffsController');
-
-router.get('/',    tariffsController.getAllTariffs);
-router.get('/:id', tariffsController.getTariffById);
-router.post('/',   tariffsController.createTariff);
-router.patch('/:id', tariffsController.updateTariff);
-router.delete('/:id', tariffsController.deleteTariff);
-
-module.exports = router;
+patch(url, data, callback) {
+  const xhr = new XMLHttpRequest();
+  xhr.open('PATCH', url);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.send(JSON.stringify(data));
+  xhr.onreadystatechange = () => {
+    if (xhr.readyState === 4) {
+      this._handleResponse(xhr, callback);
+    }
+  };
+}
 ```
 
-### Контроллеры (controllers)
+### Обработка ответа
 
-Обработка HTTP-запросов — валидация параметров, вызов сервиса, формирование ответа:
-
-```js
-const getAllTariffs = (req, res) => {
-  const { title } = req.query;           // ?title=Старт
-  const tariffs = tariffsService.findAll(title);
-  res.json(tariffs);
-};
-
-const getTariffById = (req, res) => {
-  const id = parseInt(req.params.id);
-  const tariff = tariffsService.findOne(id);
-  if (!tariff) return res.status(404).json({ error: 'Тариф не найден' });
-  res.json(tariff);
-};
-
-const createTariff = (req, res) => {
-  const { src, title, price, text, fullText } = req.body;
-  if (!title || !price || !text)
-    return res.status(400).json({ error: 'Не все поля заполнены' });
-  const newTariff = tariffsService.create({ src, title, price, text, fullText });
-  res.status(201).json(newTariff);
-};
-
-const updateTariff = (req, res) => {
-  const id = parseInt(req.params.id);
-  const updated = tariffsService.update(id, req.body);
-  if (!updated) return res.status(404).json({ error: 'Тариф не найден' });
-  res.json(updated);
-};
-
-const deleteTariff = (req, res) => {
-  const id = parseInt(req.params.id);
-  const success = tariffsService.remove(id);
-  if (!success) return res.status(404).json({ error: 'Тариф не найден' });
-  res.status(204).send();
-};
-```
-
-### Сервисы (services)
-
-Бизнес-логика — работа с массивом данных, фильтрация, CRUD:
+Парсим JSON из `responseText`, вызываем callback с данными и HTTP-статусом:
 
 ```js
-const findAll = (title) => {
-  const tariffs = fileService.readData(dataFilePath);
-  if (title) {
-    return tariffs.filter(t =>
-      t.title.toLowerCase().includes(title.toLowerCase())
-    );
+_handleResponse(xhr, callback) {
+  try {
+    const data = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+    callback(data, xhr.status);
+  } catch (e) {
+    console.error('Ошибка парсинга JSON:', e);
+    callback(null, xhr.status);
   }
-  return tariffs;
-};
-
-const update = (id, data) => {
-  const tariffs = fileService.readData(dataFilePath);
-  const index = tariffs.findIndex(t => t.id === id);
-  if (index === -1) return null;
-  tariffs[index] = { ...tariffs[index], ...data };
-  fileService.writeData(dataFilePath, tariffs);
-  return tariffs[index];
-};
+}
 ```
 
-### Файловый сервис
+## Класс TariffUrls — эндпоинты
 
-Обёртка над `fs` для чтения и записи JSON:
+Все URL в одном месте. Если сервер переедет на другой адрес — меняем только `baseUrl`:
 
 ```js
-const fs = require('fs');
-
-const readData = (filePath) => {
-  const raw = fs.readFileSync(filePath, 'utf-8');
-  return JSON.parse(raw);
-};
-
-const writeData = (filePath, data) => {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-};
+class TariffUrls {
+  constructor() {
+    this.baseUrl = 'http://localhost:3000';
+  }
+  getTariffs(title) {
+    const query = title ? `?title=${encodeURIComponent(title)}` : '';
+    return `${this.baseUrl}/tariffs${query}`;
+  }
+  getTariffById(id) {
+    return `${this.baseUrl}/tariffs/${id}`;
+  }
+  updateTariffById(id) {
+    return `${this.baseUrl}/tariffs/${id}`;
+  }
+}
 ```
+
+## Главная страница — загрузка и фильтрация
+
+При загрузке вызывается `getData()`, который делает GET-запрос. В callback рисуются карточки. Поле фильтра при вводе вызывает `getData(value)` — запрос летит с `?title=...`:
+
+```js
+getData(title = '') {
+  ajax.get(tariffUrls.getTariffs(title), (data, status) => {
+    if (status === 200 && data) {
+      this.renderData(data);
+    } else {
+      this.pageRoot.innerHTML = '<p style="color:red">Ошибка загрузки</p>';
+    }
+  });
+}
+
+// Фильтрация при вводе
+document.getElementById('filter-input').addEventListener('input', (e) => {
+  this.getData(e.target.value);
+});
+```
+
+## Страница тарифа — PATCH редактирование
+
+Форма с тремя полями. При клике на «Сохранить» отправляется PATCH-запрос с обновлёнными данными:
+
+```js
+ajax.patch(
+  tariffUrls.updateTariffById(this.id),
+  { title, price, text },
+  (data, status) => {
+    if (status === 200 && data) {
+      statusEl.textContent = 'Сохранено!';
+      this.renderData(data);   // перерисовываем карточку
+    } else {
+      statusEl.textContent = 'Ошибка сохранения';
+    }
+  }
+);
+```
+
+## CORS
+
+Фронтенд на Live Server (порт 5500), бэкенд на Express (порт 3000) — разные домены. Браузер блокирует кроссдоменные запросы. Решение: на сервере подключён `app.use(cors())`, который добавляет заголовок `Access-Control-Allow-Origin: *`.
 
 ## API эндпоинты
 
-| Метод  | URL           | Описание                        |
-|--------|---------------|--------------------------------|
-| GET    | /tariffs      | Список тарифов (?title=фильтр) |
-| GET    | /tariffs/:id  | Тариф по ID                    |
-| POST   | /tariffs      | Создать тариф                  |
-| PATCH  | /tariffs/:id  | Обновить тариф                 |
-| DELETE | /tariffs/:id  | Удалить тариф                  |
-
-## Данные
-
-```json
-[
-  { "id": 1, "title": "Старт",        "price": "500 ₽/мес",   "text": "1 vCPU · 1 ГБ RAM · 20 ГБ SSD" },
-  { "id": 2, "title": "Базовый",      "price": "1085 ₽/мес",  "text": "2 vCPU · 4 ГБ RAM · 60 ГБ SSD" },
-  { "id": 3, "title": "Бизнес",       "price": "1060 ₽/мес",  "text": "4 vCPU · 8 ГБ RAM · 120 ГБ SSD" },
-  { "id": 4, "title": "Профессионал", "price": "3 999 ₽/мес", "text": "8 vCPU · 16 ГБ RAM · 240 ГБ SSD" }
-]
-```
+| Метод  | URL            | Описание                        |
+|--------|----------------|--------------------------------|
+| GET    | /tariffs       | Список тарифов (?title=фильтр) |
+| GET    | /tariffs/:id   | Тариф по ID                    |
+| POST   | /tariffs       | Создать тариф                  |
+| PATCH  | /tariffs/:id   | Обновить тариф                 |
+| DELETE | /tariffs/:id   | Удалить тариф                  |
 
 ## Запуск
 
 ```bash
-cd backend
-npm install
-npm run dev
+# 1. Бэкенд
+cd backend && npm install && npm run dev
 # Сервер на http://localhost:3000
-```
 
-Проверка: `curl http://localhost:3000/tariffs`
+# 2. Фронтенд — через Live Server в VS Code
+# Открыть frontend/pages/tariffs.html
+```
