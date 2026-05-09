@@ -1,4 +1,4 @@
-# ЛР №3 — Компонентный подход
+# ЛР №4 — REST API на Express.js
 
 > **Тема:** cloud_hosting.ru  
 > [← Вернуться к оглавлению](https://github.com/Dovletov-Seyran/NAP_Course_2026)
@@ -10,168 +10,212 @@
 - [Цель](#цель)
 - [Что реализовано](#что-реализовано)
 - [Структура проекта](#структура-проекта)
-- [Компоненты](#компоненты)
-  - [HeaderComponent](#headercomponent)
-  - [ProductCardComponent](#productcardcomponent)
-  - [Навигация между страницами](#навигация-между-страницами)
-- [Данные тарифов](#данные-тарифов)
+- [Архитектура бэкенда](#архитектура-бэкенда)
+  - [Точка входа (index.js)](#точка-входа-indexjs)
+  - [Маршруты (routes)](#маршруты-routes)
+  - [Контроллеры (controllers)](#контроллеры-controllers)
+  - [Сервисы (services)](#сервисы-services)
+  - [Файловый сервис](#файловый-сервис)
+- [API эндпоинты](#api-эндпоинты)
+- [Данные](#данные)
 - [Запуск](#запуск)
 
 ---
 
 ## Цель
 
-Рефакторинг многостраничного сайта из ЛР №1-2 на компонентный подход с использованием ES6-классов и модулей.
+Создание серверной части приложения на Node.js + Express.js с REST API для управления тарифами VPS/VDS.
 
 ## Что реализовано
 
-- Каждый UI-блок вынесен в отдельный класс-компонент
-- SPA-подобная навигация: переход между списком тарифов и детальной страницей без перезагрузки
-- Данные тарифов в JS-объекте (ещё нет API)
-- Страницы: главная, тарифы, калькулятор, о компании, заявка
+- Express.js сервер на порту 3000
+- REST API с полным CRUD для тарифов
+- Трёхслойная архитектура: routes → controllers → services
+- Хранение данных в JSON-файле
+- CORS middleware для кроссдоменных запросов
+- Логирование запросов
 
 ## Структура проекта
 
 ```
-├── pages/
-│   ├── index.html               // Главная
-│   ├── tariffs.html             // Тарифы (SPA)
-│   ├── calculator.html          // Калькулятор
-│   ├── about.html               // О компании
-│   └── contact.html             // Заявка
-├── js/
-│   ├── components/
-│   │   ├── header/index.js      // Шапка с навигацией
-│   │   ├── footer/index.js      // Подвал
-│   │   ├── product-card/index.js // Карточка тарифа
-│   │   ├── product/index.js     // Детальная карточка
-│   │   └── back-button/index.js // Кнопка «Назад»
-│   ├── pages/
-│   │   ├── main/index.js        // Страница списка тарифов
-│   │   └── product/index.js     // Страница конкретного тарифа
-│   ├── main.js                  // Точка входа
-│   └── script.js                // Калькулятор
-└── css/
-    └── style.css
+backend/
+├── src/
+│   ├── index.js                    // Точка входа, запуск сервера
+│   ├── routes/
+│   │   └── tariffs.js              // Маршруты /tariffs
+│   ├── controllers/
+│   │   └── tariffsController.js    // Обработка запросов/ответов
+│   ├── services/
+│   │   ├── tariffsService.js       // Бизнес-логика (CRUD)
+│   │   └── fileService.js          // Чтение/запись JSON
+│   └── data/
+│       └── tariffs.json            // Данные тарифов
+└── package.json
 ```
 
-## Компоненты
+## Архитектура бэкенда
 
-### HeaderComponent
+### Точка входа (index.js)
 
-Шапка сайта с навигацией. Генерирует HTML, подсвечивает текущую страницу:
+Создание Express-приложения, подключение middleware и маршрутов:
 
 ```js
-export class HeaderComponent {
-  constructor(parent) {
-    this.parent = parent;
-  }
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const tariffsRouter = require('./routes/tariffs');
+const tariffsService = require('./services/tariffsService');
 
-  getHTML() {
-    const currentPage = window.location.pathname.split("/").pop();
-    const navItems = [
-      { label: "Главная", href: "index.html" },
-      { label: "Продукты", href: "tariffs.html" },
-      { label: "Калькулятор", href: "calculator.html" },
-      { label: "О компании", href: "about.html" },
-    ];
+const app = express();
+const PORT = 3000;
 
-    const links = navItems
-      .map(item => `
-        <a href="${item.href}"
-           class="nav__link ${currentPage === item.href ? "nav__link--active" : ""}">
-          ${item.label}
-        </a>`)
-      .join("");
+tariffsService.init(path.join(__dirname, 'data/tariffs.json'));
 
-    return `
-      <header class="site-header">
-        <div class="container site-header__inner">
-          <a href="index.html" class="site-logo">
-            <span class="site-logo__icon">☁</span> cloud_hosting.ru
-          </a>
-          <nav class="site-nav">${links}</nav>
-          <a href="contact.html" class="site-header__cta">Оставить заявку</a>
-        </div>
-      </header>`;
-  }
+app.use(cors());
+app.use(express.json());
 
-  render() {
-    this.parent.insertAdjacentHTML("afterbegin", this.getHTML());
-  }
-}
+// Логирование каждого запроса
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
+app.use('/tariffs', tariffsRouter);
+
+app.listen(PORT, () => {
+  console.log(`Сервер запущен: http://localhost:${PORT}`);
+});
 ```
 
-### ProductCardComponent
+### Маршруты (routes)
 
-Карточка тарифа с кнопкой и обработчиком клика:
+Привязка HTTP-методов к функциям контроллера:
 
 ```js
-export class ProductCardComponent {
-  constructor(parent) {
-    this.parent = parent;
-  }
+const express = require('express');
+const router = express.Router();
+const tariffsController = require('../controllers/tariffsController');
 
-  getHTML(data) {
-    return `
-      <div class="card lab-card" style="width: 220px;">
-        <div class="card-body text-center">
-          <img src="${data.src}" alt="${data.title}" class="mb-3" width="64" height="64">
-          <h5 class="card-title">${data.title}</h5>
-          <p class="lab-price">${data.price}</p>
-          <p class="card-text text-muted small">${data.text}</p>
-          <button class="btn btn-success w-100"
-                  id="click-card-${data.id}"
-                  data-id="${data.id}">Подробнее</button>
-        </div>
-      </div>`;
-  }
+router.get('/',    tariffsController.getAllTariffs);
+router.get('/:id', tariffsController.getTariffById);
+router.post('/',   tariffsController.createTariff);
+router.patch('/:id', tariffsController.updateTariff);
+router.delete('/:id', tariffsController.deleteTariff);
 
-  addListeners(data, listener) {
-    document.getElementById(`click-card-${data.id}`)
-      .addEventListener("click", listener);
-  }
-
-  render(data, listener) {
-    this.parent.insertAdjacentHTML("beforeend", this.getHTML(data));
-    this.addListeners(data, listener);
-  }
-}
+module.exports = router;
 ```
 
-### Навигация между страницами
+### Контроллеры (controllers)
 
-При клике на карточку создаётся `ProductPage`, которая заменяет содержимое `#root`. Кнопка «Назад» возвращает `MainPage`:
+Обработка HTTP-запросов — валидация параметров, вызов сервиса, формирование ответа:
 
 ```js
-// pages/main/index.js
-clickCard(e) {
-  const cardId = e.target.dataset.id;
-  const productPage = new ProductPage(this.parent, cardId);
-  productPage.render();
-}
+const getAllTariffs = (req, res) => {
+  const { title } = req.query;           // ?title=Старт
+  const tariffs = tariffsService.findAll(title);
+  res.json(tariffs);
+};
 
-// pages/product/index.js
-clickBack() {
-  new MainPage(this.parent).render();
-}
+const getTariffById = (req, res) => {
+  const id = parseInt(req.params.id);
+  const tariff = tariffsService.findOne(id);
+  if (!tariff) return res.status(404).json({ error: 'Тариф не найден' });
+  res.json(tariff);
+};
+
+const createTariff = (req, res) => {
+  const { src, title, price, text, fullText } = req.body;
+  if (!title || !price || !text)
+    return res.status(400).json({ error: 'Не все поля заполнены' });
+  const newTariff = tariffsService.create({ src, title, price, text, fullText });
+  res.status(201).json(newTariff);
+};
+
+const updateTariff = (req, res) => {
+  const id = parseInt(req.params.id);
+  const updated = tariffsService.update(id, req.body);
+  if (!updated) return res.status(404).json({ error: 'Тариф не найден' });
+  res.json(updated);
+};
+
+const deleteTariff = (req, res) => {
+  const id = parseInt(req.params.id);
+  const success = tariffsService.remove(id);
+  if (!success) return res.status(404).json({ error: 'Тариф не найден' });
+  res.status(204).send();
+};
 ```
 
-## Данные тарифов
+### Сервисы (services)
 
-На этом этапе данные ещё захардкожены в JS:
+Бизнес-логика — работа с массивом данных, фильтрация, CRUD:
 
 ```js
-getData() {
-  return [
-    { id: 1, src: "...", title: "Старт",        price: "299 ₽/мес",   text: "1 vCPU · 1 ГБ RAM · 20 ГБ SSD" },
-    { id: 2, src: "...", title: "Базовый",       price: "799 ₽/мес",   text: "2 vCPU · 4 ГБ RAM · 60 ГБ SSD" },
-    { id: 3, src: "...", title: "Бизнес",        price: "1 999 ₽/мес", text: "4 vCPU · 8 ГБ RAM · 120 ГБ SSD" },
-    { id: 4, src: "...", title: "Профессионал",  price: "3 999 ₽/мес", text: "8 vCPU · 16 ГБ RAM · 240 ГБ SSD" },
-  ];
-}
+const findAll = (title) => {
+  const tariffs = fileService.readData(dataFilePath);
+  if (title) {
+    return tariffs.filter(t =>
+      t.title.toLowerCase().includes(title.toLowerCase())
+    );
+  }
+  return tariffs;
+};
+
+const update = (id, data) => {
+  const tariffs = fileService.readData(dataFilePath);
+  const index = tariffs.findIndex(t => t.id === id);
+  if (index === -1) return null;
+  tariffs[index] = { ...tariffs[index], ...data };
+  fileService.writeData(dataFilePath, tariffs);
+  return tariffs[index];
+};
+```
+
+### Файловый сервис
+
+Обёртка над `fs` для чтения и записи JSON:
+
+```js
+const fs = require('fs');
+
+const readData = (filePath) => {
+  const raw = fs.readFileSync(filePath, 'utf-8');
+  return JSON.parse(raw);
+};
+
+const writeData = (filePath, data) => {
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+};
+```
+
+## API эндпоинты
+
+| Метод  | URL           | Описание                        |
+|--------|---------------|--------------------------------|
+| GET    | /tariffs      | Список тарифов (?title=фильтр) |
+| GET    | /tariffs/:id  | Тариф по ID                    |
+| POST   | /tariffs      | Создать тариф                  |
+| PATCH  | /tariffs/:id  | Обновить тариф                 |
+| DELETE | /tariffs/:id  | Удалить тариф                  |
+
+## Данные
+
+```json
+[
+  { "id": 1, "title": "Старт",        "price": "500 ₽/мес",   "text": "1 vCPU · 1 ГБ RAM · 20 ГБ SSD" },
+  { "id": 2, "title": "Базовый",      "price": "1085 ₽/мес",  "text": "2 vCPU · 4 ГБ RAM · 60 ГБ SSD" },
+  { "id": 3, "title": "Бизнес",       "price": "1060 ₽/мес",  "text": "4 vCPU · 8 ГБ RAM · 120 ГБ SSD" },
+  { "id": 4, "title": "Профессионал", "price": "3 999 ₽/мес", "text": "8 vCPU · 16 ГБ RAM · 240 ГБ SSD" }
+]
 ```
 
 ## Запуск
 
-Открыть `pages/tariffs.html` через Live Server в VS Code.
+```bash
+cd backend
+npm install
+npm run dev
+# Сервер на http://localhost:3000
+```
+
+Проверка: `curl http://localhost:3000/tariffs`
